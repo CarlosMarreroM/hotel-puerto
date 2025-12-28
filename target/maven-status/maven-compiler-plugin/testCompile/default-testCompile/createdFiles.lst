@@ -1,1 +1,6 @@
+org/docencia/hotel/domain/impl/HotelDomainImplTest.class
+org/docencia/hotel/domain/model/HotelTest.class
+org/docencia/hotel/service/impl/HotelServiceImplTest.class
+org/docencia/hotel/mapper/jpa/HotelMapperTest.class
+org/docencia/hotel/persisten/jpa/entity/HotelEntityTest.class
 org/docencia/hotel/EjemploTest.class
