@@ -1,5 +1,6 @@
 org/docencia/hotel/mapper/jpa/RoomMapperImpl.class
 org/docencia/hotel/mapper/jpa/GuestMapperImpl.class
+org/docencia/hotel/validation/Guard.class
 org/docencia/hotel/persistence/repository/jpa/BookingRepository.class
 org/docencia/hotel/domain/impl/HotelDomainImpl.class
 org/docencia/hotel/mapper/jpa/BookingMapper.class

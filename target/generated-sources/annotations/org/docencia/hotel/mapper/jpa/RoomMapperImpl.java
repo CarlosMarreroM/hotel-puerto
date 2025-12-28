@@ -2,12 +2,13 @@ package org.docencia.hotel.mapper.jpa;
 
 import javax.annotation.processing.Generated;
 import org.docencia.hotel.domain.model.Room;
+import org.docencia.hotel.persistence.jpa.entity.HotelEntity;
 import org.docencia.hotel.persistence.jpa.entity.RoomEntity;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-12-28T03:13:33+0000",
+    date = "2025-12-28T23:30:32+0000",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.17 (Azul Systems, Inc.)"
 )
 @Component
@@ -21,6 +22,12 @@ public class RoomMapperImpl implements RoomMapper {
 
         RoomEntity roomEntity = new RoomEntity();
 
+        roomEntity.setHotel( map( domain.getHotelId() ) );
+        roomEntity.setId( domain.getId() );
+        roomEntity.setNumber( domain.getNumber() );
+        roomEntity.setType( domain.getType() );
+        roomEntity.setPricePerNight( domain.getPricePerNight() );
+
         return roomEntity;
     }
 
@@ -32,6 +39,27 @@ public class RoomMapperImpl implements RoomMapper {
 
         Room room = new Room();
 
+        room.setHotelId( entityHotelId( entity ) );
+        room.setId( entity.getId() );
+        room.setNumber( entity.getNumber() );
+        room.setType( entity.getType() );
+        room.setPricePerNight( entity.getPricePerNight() );
+
         return room;
+    }
+
+    private String entityHotelId(RoomEntity roomEntity) {
+        if ( roomEntity == null ) {
+            return null;
+        }
+        HotelEntity hotel = roomEntity.getHotel();
+        if ( hotel == null ) {
+            return null;
+        }
+        String id = hotel.getId();
+        if ( id == null ) {
+            return null;
+        }
+        return id;
     }
 }

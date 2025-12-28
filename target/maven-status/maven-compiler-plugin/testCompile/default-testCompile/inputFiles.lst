@@ -1,6 +1,9 @@
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/SmokeTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/domain/impl/HotelDomainImplTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/domain/impl/RoomDomainImplTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/domain/model/HotelTest.java
-/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/mapper/jpa/HotelMapperTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/domain/model/RoomTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/persisten/jpa/entity/HotelEntityTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/persisten/jpa/entity/RoomEntityTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/service/impl/HotelServiceImplTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/service/impl/RoomServiceImplTest.java
