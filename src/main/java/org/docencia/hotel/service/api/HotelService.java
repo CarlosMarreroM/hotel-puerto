@@ -5,6 +5,13 @@ import java.util.Optional;
 
 import org.docencia.hotel.domain.model.Hotel;
 
+/**
+ * Interfaz que define las operaciones del servicio de hoteles.
+ *
+ * Esta interfaz actúa como un contrato para las funcionalidades
+ * relacionadas con la gestión de hoteles dentro del sistema.
+ *
+ */
 public interface HotelService {
     
     /**
@@ -15,7 +22,12 @@ public interface HotelService {
      */
     Hotel save(Hotel hotel);
 
-    
+    /**
+     * Verifica si un hotel existe por su identificador.
+     * 
+     * @param id Identificador del hotel
+     * @return true si el hotel existe, false en caso contrario
+     */
     boolean existsById(String id);
 
     /**

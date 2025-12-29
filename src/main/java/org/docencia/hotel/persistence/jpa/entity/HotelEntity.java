@@ -40,12 +40,6 @@ public class HotelEntity {
     private String address;
 
     /**
-     * Lista de habitaciones del hotel.
-     */
-    //@OneToMany(mappedBy = "hotel") --- IGNORE ---
-    // private List<RoomEntity> rooms = new ArrayList<>();
-
-    /**
      * Constructor por defecto
      */
     public HotelEntity() {
@@ -118,9 +112,8 @@ public class HotelEntity {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!(obj instanceof HotelEntity))
+        if (!(obj instanceof HotelEntity other))
             return false;
-        HotelEntity that = (HotelEntity) obj;
-        return id != null && id.equals(that.id);
+        return id != null && id.equals(other.id);
     }
 }

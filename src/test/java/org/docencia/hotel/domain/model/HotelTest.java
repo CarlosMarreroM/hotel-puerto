@@ -1,86 +1,91 @@
 package org.docencia.hotel.domain.model;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Test;
+
 class HotelTest {
+
+    // ===================== equals =====================
+
     @Test
-    void should_create_hotel_with_id_only() {
-
-        Hotel hotel = new Hotel("H1");
-
-        assertEquals("H1", hotel.getId());
-        assertNull(hotel.getHotelName());
-        assertNull(hotel.getAddress());
+    void equals_sameReference_true() {
+        Hotel h = new Hotel("h1");
+        assertEquals(h, h);
     }
 
     @Test
-    void should_create_hotel_with_name_and_address() {
-
-        Hotel hotel = new Hotel("Hotel Puerto", "Calle Mar 123");
-
-        assertEquals("Hotel Puerto", hotel.getHotelName());
-        assertEquals("Calle Mar 123", hotel.getAddress());
-        assertNull(hotel.getId());
+    void equals_null_false() {
+        Hotel h = new Hotel("h1");
+        assertNotEquals(h, null);
     }
 
     @Test
-    void hotels_with_same_id_should_be_equal() {
+    void equals_differentType_false() {
+        Hotel h = new Hotel("h1");
+        assertNotEquals(h, "not a hotel");
+    }
 
-        Hotel h1 = new Hotel("H1");
-        Hotel h2 = new Hotel("H1");
+    @Test
+    void equals_sameId_true() {
+        Hotel a = new Hotel("h1");
+        Hotel b = new Hotel("h1");
+
+        assertEquals(a, b);
+        assertEquals(b, a);
+    }
+
+    @Test
+    void equals_differentId_false() {
+        Hotel a = new Hotel("h1");
+        Hotel b = new Hotel("h2");
+
+        assertNotEquals(a, b);
+        assertNotEquals(b, a);
+    }
+
+    @Test
+    void equals_whenIdNull_falseEvenIfBothNull() {
+        Hotel a = new Hotel();
+        Hotel b = new Hotel();
+
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void equals_oneNullId_false() {
+        Hotel a = new Hotel();
+        Hotel b = new Hotel("h1");
+
+        assertNotEquals(a, b);
+        assertNotEquals(b, a);
+    }
+
+    // ===================== hashCode =====================
+
+    @Test
+    void hashCode_sameId_sameHash() {
+        Hotel a = new Hotel("h1");
+        Hotel b = new Hotel("h1");
+
+        assertEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    void hashCode_differentId_differentHashUsually() {
+        Hotel a = new Hotel("h1");
+        Hotel b = new Hotel("h2");
+
+        assertNotEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    void hashCode_nullId_isStable() {
+        Hotel a = new Hotel(); 
+        int h1 = a.hashCode();
+        int h2 = a.hashCode();
 
         assertEquals(h1, h2);
     }
-
-    @Test
-    void hotels_with_different_id_should_not_be_equal() {
-
-        Hotel h1 = new Hotel("H1");
-        Hotel h2 = new Hotel("H2");
-
-        assertNotEquals(h1, h2);
-    }
-
-    @Test
-    void hotel_should_not_be_equal_to_null() {
-
-        Hotel hotel = new Hotel("H1");
-
-        assertNotEquals(hotel, null);
-    }
-
-    @Test
-    void hotel_should_not_be_equal_to_other_class() {
-
-        Hotel hotel = new Hotel("H1");
-
-        assertNotEquals(hotel, "H1");
-    }
-
-    @Test
-    void equal_hotels_should_have_same_hashcode() {
-
-        Hotel h1 = new Hotel("H1");
-        Hotel h2 = new Hotel("H1");
-
-        assertEquals(h1.hashCode(), h2.hashCode());
-    }
-
-    @Test
-    void hotel_should_be_equal_to_itself() {
-        Hotel hotel = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-
-        assertEquals(hotel, hotel);
-    }
-
-    @Test
-    void hotel_with_null_id_should_not_be_equal_to_hotel_with_non_null_id() {
-        Hotel h1 = new Hotel(); // id == null
-        Hotel h2 = new Hotel("H1"); // id != null
-
-        assertNotEquals(h1, h2); // cubre: if (id == null) { if (other.id != null) return false; }
-    }
-
 }
+

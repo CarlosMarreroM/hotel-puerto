@@ -1,62 +1,92 @@
 package org.docencia.hotel.persisten.jpa.entity;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.docencia.hotel.persistence.jpa.entity.HotelEntity;
+import org.junit.jupiter.api.Test;
 
 class HotelEntityTest {
 
+    // ===================== equals =====================
+
     @Test
-    void should_be_equal_to_itself() {
-        HotelEntity e = new HotelEntity("H1", "Hotel Puerto", "Calle Mar 123");
-        assertEquals(e, e);
+    void equals_sameReference_true() {
+        HotelEntity h = new HotelEntity("h1");
+        assertEquals(h, h);
     }
 
     @Test
-    void should_not_be_equal_to_null() {
-        HotelEntity e = new HotelEntity("H1");
-        assertNotEquals(e, null);
+    void equals_null_false() {
+        HotelEntity h = new HotelEntity("h1");
+        assertNotEquals(h, null);
     }
 
     @Test
-    void should_not_be_equal_to_other_class() {
-        HotelEntity e = new HotelEntity("H1");
-        assertNotEquals(e, "H1");
+    void equals_differentType_false() {
+        HotelEntity h = new HotelEntity("h1");
+        assertNotEquals(h, "not a HotelEntity");
     }
 
     @Test
-    void entities_with_same_non_null_id_should_be_equal() {
-        HotelEntity e1 = new HotelEntity("H1");
-        HotelEntity e2 = new HotelEntity("H1");
+    void equals_sameId_true() {
+        HotelEntity a = new HotelEntity("h1");
+        HotelEntity b = new HotelEntity("h1");
 
-        assertEquals(e1, e2);
-        assertEquals(e1.hashCode(), e2.hashCode());
+        assertEquals(a, b);
+        assertEquals(b, a);
     }
 
     @Test
-    void entities_with_different_id_should_not_be_equal() {
-        HotelEntity e1 = new HotelEntity("H1");
-        HotelEntity e2 = new HotelEntity("H2");
+    void equals_differentId_false() {
+        HotelEntity a = new HotelEntity("h1");
+        HotelEntity b = new HotelEntity("h2");
 
-        assertNotEquals(e1, e2);
+        assertNotEquals(a, b);
+        assertNotEquals(b, a);
     }
 
     @Test
-    void entity_with_null_id_should_not_equal_entity_with_non_null_id() {
-        HotelEntity e1 = new HotelEntity();      // id null
-        HotelEntity e2 = new HotelEntity("H1");  // id non-null
+    void equals_whenIdNull_falseEvenIfBothNull() {
+        HotelEntity a = new HotelEntity();
+        HotelEntity b = new HotelEntity();
 
-        assertNotEquals(e1, e2);
-        assertNotEquals(e2, e1);
+        assertNotEquals(a, b);
     }
 
     @Test
-    void entities_with_null_id_should_not_be_equal() {
-        HotelEntity e1 = new HotelEntity();
-        HotelEntity e2 = new HotelEntity();
+    void equals_oneNullId_false() {
+        HotelEntity a = new HotelEntity();
+        HotelEntity b = new HotelEntity("h1");
 
-        assertNotEquals(e1, e2); // por tu equals: id != null && ...
+        assertNotEquals(a, b);
+        assertNotEquals(b, a);
+    }
+
+    // ===================== hashCode =====================
+
+    @Test
+    void hashCode_sameId_sameHash() {
+        HotelEntity a = new HotelEntity("h1");
+        HotelEntity b = new HotelEntity("h1");
+
+        assertEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    void hashCode_differentId_differentHashUsually() {
+        HotelEntity a = new HotelEntity("h1");
+        HotelEntity b = new HotelEntity("h2");
+
+        assertNotEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    void hashCode_nullId_isStable() {
+        HotelEntity a = new HotelEntity();
+        int h1 = a.hashCode();
+        int h2 = a.hashCode();
+
+        assertEquals(h1, h2);
     }
 }
+

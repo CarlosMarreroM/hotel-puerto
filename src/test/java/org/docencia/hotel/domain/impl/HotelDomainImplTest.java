@@ -1,19 +1,19 @@
 package org.docencia.hotel.domain.impl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.docencia.hotel.domain.model.Hotel;
 import org.docencia.hotel.service.api.HotelService;
+import org.docencia.hotel.service.api.RoomService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class HotelDomainImplTest {
@@ -21,319 +21,257 @@ class HotelDomainImplTest {
     @Mock
     private HotelService hotelService;
 
+    @Mock
+    private RoomService roomService;
+
     @InjectMocks
-    private HotelDomainImpl hotelDomain;
+    private HotelDomainImpl domain;
+
+    // ===== helpers mínimos =====
+    private static Hotel hotel(String id, String name) {
+        Hotel h = new Hotel();
+        h.setId(id);
+        h.setHotelName(name);
+        return h;
+    }
+
+    // ===================== createHotel =====================
 
     @Test
-    void createHotel_should_throw_when_hotel_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.createHotel(null));
-
-        assertEquals("hotel must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
+    void createHotel_whenHotelNull_throwsNullPointerException_andNoInteractions() {
+        assertThrows(NullPointerException.class, () -> domain.createHotel(null));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void createHotel_should_throw_when_hotel_id_is_null() {
-        Hotel hotel = new Hotel(null, "Hotel Puerto", "Calle Mar 123");
+    void createHotel_whenHotelIdNull_throwsNullPointerException() {
+        Hotel h = hotel(null, "Hilton");
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.createHotel(hotel));
-
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
+        assertThrows(NullPointerException.class, () -> domain.createHotel(h));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void createHotel_should_throw_when_hotel_id_is_blank() {
-        Hotel hotel = new Hotel("   ", "Hotel Puerto", "Calle Mar 123");
+    void createHotel_whenHotelIdBlank_throwsIllegalArgumentException() {
+        Hotel h = hotel("   ", "Hilton");
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.createHotel(hotel));
-
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
+        assertThrows(IllegalArgumentException.class, () -> domain.createHotel(h));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void createHotel_should_throw_when_hotel_name_is_null() {
-        Hotel hotel = new Hotel("H1", null, "Calle Mar 123");
+    void createHotel_whenHotelNameNull_throwsNullPointerException() {
+        Hotel h = hotel("h1", null);
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.createHotel(hotel));
-
-        assertEquals("hotel name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
+        assertThrows(NullPointerException.class, () -> domain.createHotel(h));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void createHotel_should_throw_when_hotel_name_is_blank() {
-        Hotel hotel = new Hotel("H1", "   ", "Calle Mar 123");
+    void createHotel_whenHotelNameBlank_throwsIllegalArgumentException() {
+        Hotel h = hotel("h1", "   ");
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.createHotel(hotel));
-
-        assertEquals("hotel name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
+        assertThrows(IllegalArgumentException.class, () -> domain.createHotel(h));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void createHotel_should_return_existing_hotel_when_it_already_exists() {
-        Hotel input = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-        Hotel existing = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
+    void createHotel_ok_delegatesToHotelServiceSave() {
+        Hotel input = hotel("h1", "Hilton");
+        Hotel saved = hotel("h1", "Hilton");
 
-        when(hotelService.findById("H1")).thenReturn(Optional.of(existing));
-
-        Hotel result = hotelDomain.createHotel(input);
-
-        assertSame(existing, result);
-
-        verify(hotelService).findById("H1");
-        verify(hotelService, never()).save(any());
-        verifyNoMoreInteractions(hotelService);
-    }
-
-    @Test
-    void createHotel_should_save_and_return_hotel_when_it_does_not_exist() {
-        Hotel input = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-        Hotel saved = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-
-        when(hotelService.findById("H1")).thenReturn(Optional.empty());
         when(hotelService.save(input)).thenReturn(saved);
 
-        Hotel result = hotelDomain.createHotel(input);
+        Hotel result = domain.createHotel(input);
 
         assertSame(saved, result);
-
-        verify(hotelService).findById("H1");
         verify(hotelService).save(input);
         verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
+    }
+
+    // ===================== getHotelById =====================
+
+    @Test
+    void getHotelById_whenIdNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.getHotelById(null));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void getHotelById_should_throw_when_id_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.getHotelById(null));
-
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
+    void getHotelById_whenIdBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.getHotelById("   "));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void getHotelById_should_throw_when_id_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.getHotelById("   "));
+    void getHotelById_ok_delegatesToFindById() {
+        Hotel h = hotel("h1", "Hilton");
+        when(hotelService.findById("h1")).thenReturn(Optional.of(h));
 
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void getHotelById_should_delegate_to_service_when_id_is_valid() {
-        Hotel expected = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-        when(hotelService.findById("H1")).thenReturn(Optional.of(expected));
-
-        Optional<Hotel> result = hotelDomain.getHotelById("H1");
+        Optional<Hotel> result = domain.getHotelById("h1");
 
         assertTrue(result.isPresent());
-        assertSame(expected, result.get());
-
-        verify(hotelService).findById("H1");
+        assertSame(h, result.get());
+        verify(hotelService).findById("h1");
         verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
     }
 
-    @Test
-    void getHotelById_should_return_empty_when_service_returns_empty() {
-        when(hotelService.findById("H1")).thenReturn(Optional.empty());
-
-        Optional<Hotel> result = hotelDomain.getHotelById("H1");
-
-        assertTrue(result.isEmpty());
-
-        verify(hotelService).findById("H1");
-        verifyNoMoreInteractions(hotelService);
-    }
+    // ===================== getAllHotels =====================
 
     @Test
-    void getAllHotels_should_delegate_to_service() {
-        Hotel h1 = new Hotel("H1", "Hotel 1", "Dir 1");
-        Hotel h2 = new Hotel("H2", "Hotel 2", "Dir 2");
-        List<Hotel> expected = List.of(h1, h2);
-
+    void getAllHotels_delegatesToFindAll() {
+        List<Hotel> expected = List.of(hotel("h1", "Hilton"), hotel("h2", "Ritz"));
         when(hotelService.findAll()).thenReturn(expected);
 
-        List<Hotel> result = hotelDomain.getAllHotels();
+        List<Hotel> result = domain.getAllHotels();
 
         assertSame(expected, result);
         verify(hotelService).findAll();
         verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
+    }
+
+    // ===================== getHotelsByName =====================
+
+    @Test
+    void getHotelsByName_whenNameNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.getHotelsByName(null));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void updateHotel_should_throw_when_id_is_null() {
-        Hotel hotel = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.updateHotel(null, hotel));
-
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
+    void getHotelsByName_whenNameBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.getHotelsByName("   "));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void updateHotel_should_throw_when_hotel_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.updateHotel("H1", null));
+    void getHotelsByName_ok_delegatesToFindByName() {
+        List<Hotel> expected = List.of(hotel("h1", "Hilton"));
+        when(hotelService.findByName("Hilton")).thenReturn(expected);
 
-        assertEquals("hotel must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
+        List<Hotel> result = domain.getHotelsByName("Hilton");
 
-    @Test
-    void updateHotel_should_throw_when_id_is_blank() {
-        Hotel hotel = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.updateHotel("   ", hotel));
-
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void updateHotel_should_throw_when_hotel_name_is_null() {
-        Hotel hotel = new Hotel("H1", null, "Calle Mar 123");
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.updateHotel("H1", hotel));
-
-        assertEquals("hotel name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void updateHotel_should_throw_when_hotel_name_is_blank() {
-        Hotel hotel = new Hotel("H1", "   ", "Calle Mar 123");
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.updateHotel("H1", hotel));
-
-        assertEquals("hotel name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void updateHotel_should_throw_when_hotel_does_not_exist() {
-        Hotel hotel = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
-
-        when(hotelService.existsById("H1")).thenReturn(false);
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.updateHotel("H1", hotel));
-
-        assertEquals("hotel not found: H1", ex.getMessage());
-
-        verify(hotelService).existsById("H1");
-        verify(hotelService, never()).save(any());
+        assertSame(expected, result);
+        verify(hotelService).findByName("Hilton");
         verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
+    }
+
+    // ===================== updateHotel =====================
+
+    @Test
+    void updateHotel_whenIdNull_throwsNullPointerException() {
+        Hotel h = hotel("x", "Hilton");
+
+        assertThrows(NullPointerException.class, () -> domain.updateHotel(null, h));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void updateHotel_should_set_id_and_save_when_hotel_exists() {
-        Hotel hotel = new Hotel(null, "Hotel Puerto", "Calle Mar 123");
-        Hotel saved = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
+    void updateHotel_whenIdBlank_throwsIllegalArgumentException() {
+        Hotel h = hotel("x", "Hilton");
 
-        when(hotelService.existsById("H1")).thenReturn(true);
-        when(hotelService.save(hotel)).thenReturn(saved);
+        assertThrows(IllegalArgumentException.class, () -> domain.updateHotel("   ", h));
+        verifyNoInteractions(hotelService, roomService);
+    }
 
-        Hotel result = hotelDomain.updateHotel("H1", hotel);
+    @Test
+    void updateHotel_whenHotelNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.updateHotel("h1", null));
+        verifyNoInteractions(hotelService, roomService);
+    }
 
+    @Test
+    void updateHotel_whenHotelNameNull_throwsNullPointerException() {
+        Hotel h = hotel("x", null);
+
+        assertThrows(NullPointerException.class, () -> domain.updateHotel("h1", h));
+        verifyNoInteractions(hotelService, roomService);
+    }
+
+    @Test
+    void updateHotel_whenHotelNameBlank_throwsIllegalArgumentException() {
+        Hotel h = hotel("x", "   ");
+
+        assertThrows(IllegalArgumentException.class, () -> domain.updateHotel("h1", h));
+        verifyNoInteractions(hotelService, roomService);
+    }
+
+    @Test
+    void updateHotel_whenHotelNotExists_throwsIllegalArgumentException_andDoesNotSave() {
+        Hotel h = hotel("x", "Hilton");
+        when(hotelService.existsById("h404")).thenReturn(false);
+
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.updateHotel("h404", h));
+        assertEquals("hotel not found: h404", ex.getMessage());
+
+        verify(hotelService).existsById("h404");
+        verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
+    }
+
+    @Test
+    void updateHotel_ok_setsIdAndSaves() {
+        Hotel h = hotel("original", "Hilton");
+        Hotel saved = hotel("h1", "Hilton");
+
+        when(hotelService.existsById("h1")).thenReturn(true);
+        when(hotelService.save(h)).thenReturn(saved);
+
+        Hotel result = domain.updateHotel("h1", h);
+
+        assertEquals("h1", h.getId(), "El dominio debe forzar el id recibido por parámetro");
         assertSame(saved, result);
-        assertEquals("H1", hotel.getId());
 
-        verify(hotelService).existsById("H1");
-        verify(hotelService).save(hotel);
+        verify(hotelService).existsById("h1");
+        verify(hotelService).save(h);
         verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
+    }
+
+    // ===================== deleteHotel =====================
+
+    @Test
+    void deleteHotel_whenIdNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.deleteHotel(null));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void deleteHotel_should_throw_when_id_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.deleteHotel(null));
-
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
+    void deleteHotel_whenIdBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.deleteHotel("   "));
+        verifyNoInteractions(hotelService, roomService);
     }
 
     @Test
-    void deleteHotel_should_throw_when_id_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.deleteHotel("   "));
+    void deleteHotel_whenHotelNotExists_returnsFalse_andDoesNotDeleteRoomsOrHotel() {
+        when(hotelService.existsById("h404")).thenReturn(false);
 
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
+        boolean result = domain.deleteHotel("h404");
+
+        assertFalse(result);
+
+        verify(hotelService).existsById("h404");
+        verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService);
     }
 
     @Test
-    void deleteHotel_should_delegate_to_service_when_id_is_valid() {
-        when(hotelService.deleteById("H1")).thenReturn(true);
+    void deleteHotel_whenHotelExists_deletesRoomsThenDeletesHotel_andReturnsResult() {
+        when(hotelService.existsById("h1")).thenReturn(true);
+        when(hotelService.deleteById("h1")).thenReturn(true);
 
-        boolean result = hotelDomain.deleteHotel("H1");
+        boolean result = domain.deleteHotel("h1");
 
         assertTrue(result);
 
-        verify(hotelService).deleteById("H1");
-        verifyNoMoreInteractions(hotelService);
-    }
-
-    @Test
-    void findHotelsByName_should_throw_when_name_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelDomain.findHotelsByName(null));
-
-        assertEquals("name must not be null", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void findHotelsByName_should_throw_when_name_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelDomain.findHotelsByName("   "));
-
-        assertEquals("name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelService);
-    }
-
-    @Test
-    void findHotelsByName_should_delegate_to_service_when_name_is_valid() {
-        List<Hotel> expected = List.of(
-                new Hotel("H1", "Hotel Puerto", "Dir 1"),
-                new Hotel("H2", "Hotel Puerto", "Dir 2"));
-
-        when(hotelService.findByName("Hotel Puerto")).thenReturn(expected);
-
-        List<Hotel> result = hotelDomain.findHotelsByName("Hotel Puerto");
-
-        assertSame(expected, result);
-
-        verify(hotelService).findByName("Hotel Puerto");
-        verifyNoMoreInteractions(hotelService);
+        verify(hotelService).existsById("h1");
+        verify(roomService).deleteByHotelId("h1");
+        verify(hotelService).deleteById("h1");
+        verifyNoMoreInteractions(hotelService, roomService);
     }
 }

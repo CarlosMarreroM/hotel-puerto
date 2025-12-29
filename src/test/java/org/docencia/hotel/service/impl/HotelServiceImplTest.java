@@ -1,5 +1,12 @@
 package org.docencia.hotel.service.impl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.docencia.hotel.domain.model.Hotel;
 import org.docencia.hotel.mapper.jpa.HotelMapper;
 import org.docencia.hotel.persistence.jpa.entity.HotelEntity;
@@ -9,13 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class HotelServiceImplTest {
@@ -27,156 +27,142 @@ class HotelServiceImplTest {
     private HotelMapper hotelMapper;
 
     @InjectMocks
-    private HotelServiceImpl hotelService;
+    private HotelServiceImpl service;
+
+    // ===== helpers mínimos =====
+    private static Hotel anyHotel() {
+        return new Hotel(); // ajusta si no tienes ctor vacío
+    }
+
+    private static HotelEntity anyHotelEntity() {
+        return new HotelEntity(); // ajusta si no tienes ctor vacío
+    }
+
+    // ===================== save =====================
 
     @Test
-    void save_should_map_save_and_return_domain() {
-        Hotel input = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
+    void save_whenHotelIsNull_throwsNullPointerException_andNoInteractions() {
+        assertThrows(NullPointerException.class, () -> service.save(null));
 
-        HotelEntity entityToSave = mock(HotelEntity.class);
-        HotelEntity savedEntity = mock(HotelEntity.class);
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
+    }
 
-        Hotel expected = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
+    @Test
+    void save_ok_mapsSavesAndMapsBack() {
+        Hotel input = anyHotel();
+        HotelEntity toSave = anyHotelEntity();
+        HotelEntity savedEntity = anyHotelEntity();
+        Hotel expected = anyHotel();
 
-        when(hotelMapper.toEntity(input)).thenReturn(entityToSave);
-        when(hotelRepository.save(entityToSave)).thenReturn(savedEntity);
+        when(hotelMapper.toEntity(input)).thenReturn(toSave);
+        when(hotelRepository.save(toSave)).thenReturn(savedEntity);
         when(hotelMapper.toDomain(savedEntity)).thenReturn(expected);
 
-        Hotel result = hotelService.save(input);
+        Hotel result = service.save(input);
 
         assertSame(expected, result);
-
         verify(hotelMapper).toEntity(input);
-        verify(hotelRepository).save(entityToSave);
+        verify(hotelRepository).save(toSave);
         verify(hotelMapper).toDomain(savedEntity);
         verifyNoMoreInteractions(hotelRepository, hotelMapper);
     }
 
-    @Test
-    void save_should_throw_when_hotel_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelService.save(null));
+    // ===================== existsById =====================
 
-        assertEquals("hotel must not be null", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+    @Test
+    void existsById_whenIdNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.existsById(null));
+
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void existsById_should_throw_when_id_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelService.existsById(null));
+    void existsById_whenIdBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.existsById("   "));
 
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void existsById_should_throw_when_id_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelService.existsById("   "));
+    void existsById_ok_delegatesToRepository() {
+        when(hotelRepository.existsById("h1")).thenReturn(true);
 
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
-    }
-
-    @Test
-    void existsById_should_delegate_to_repository_when_id_is_valid() {
-        when(hotelRepository.existsById("H1")).thenReturn(true);
-
-        boolean result = hotelService.existsById("H1");
+        boolean result = service.existsById("h1");
 
         assertTrue(result);
-
-        verify(hotelRepository).existsById("H1");
+        verify(hotelRepository).existsById("h1");
         verifyNoMoreInteractions(hotelRepository);
         verifyNoInteractions(hotelMapper);
     }
 
-    @Test
-    void findById_should_throw_when_id_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelService.findById(null));
+    // ===================== findById =====================
 
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+    @Test
+    void findById_whenIdNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.findById(null));
+
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void findById_should_throw_when_id_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelService.findById("   "));
+    void findById_whenIdBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.findById(""));
 
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void findById_should_return_empty_when_repository_returns_empty() {
-        when(hotelRepository.findById("H1")).thenReturn(Optional.empty());
+    void findById_whenNotFound_returnsEmpty_andDoesNotMap() {
+        when(hotelRepository.findById("h1")).thenReturn(Optional.empty());
 
-        Optional<Hotel> result = hotelService.findById("H1");
+        Optional<Hotel> result = service.findById("h1");
 
         assertTrue(result.isEmpty());
-
-        verify(hotelRepository).findById("H1");
-        verifyNoInteractions(hotelMapper);
+        verify(hotelRepository).findById("h1");
         verifyNoMoreInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void findById_should_return_mapped_domain_when_entity_exists() {
-        HotelEntity entity = mock(HotelEntity.class);
-        Hotel expected = new Hotel("H1", "Hotel Puerto", "Calle Mar 123");
+    void findById_whenFound_mapsToDomain() {
+        HotelEntity entity = anyHotelEntity();
+        Hotel domain = anyHotel();
 
-        when(hotelRepository.findById("H1")).thenReturn(Optional.of(entity));
-        when(hotelMapper.toDomain(entity)).thenReturn(expected);
+        when(hotelRepository.findById("h1")).thenReturn(Optional.of(entity));
+        when(hotelMapper.toDomain(entity)).thenReturn(domain);
 
-        Optional<Hotel> result = hotelService.findById("H1");
+        Optional<Hotel> result = service.findById("h1");
 
         assertTrue(result.isPresent());
-        assertSame(expected, result.get());
-
-        verify(hotelRepository).findById("H1");
+        assertSame(domain, result.get());
+        verify(hotelRepository).findById("h1");
         verify(hotelMapper).toDomain(entity);
         verifyNoMoreInteractions(hotelRepository, hotelMapper);
     }
 
-    @Test
-    void findAll_should_return_empty_list_when_repository_returns_empty() {
-        when(hotelRepository.findAll()).thenReturn(List.of());
-
-        List<Hotel> result = hotelService.findAll();
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        verify(hotelRepository).findAll();
-        verifyNoInteractions(hotelMapper);
-        verifyNoMoreInteractions(hotelRepository);
-    }
+    // ===================== findAll =====================
 
     @Test
-    void findAll_should_map_all_entities_to_domain() {
-        HotelEntity e1 = mock(HotelEntity.class);
-        HotelEntity e2 = mock(HotelEntity.class);
-
-        Hotel d1 = new Hotel("H1", "Hotel 1", "Dir 1");
-        Hotel d2 = new Hotel("H2", "Hotel 2", "Dir 2");
+    void findAll_mapsAllEntities() {
+        HotelEntity e1 = anyHotelEntity();
+        HotelEntity e2 = anyHotelEntity();
+        Hotel h1 = anyHotel();
+        Hotel h2 = anyHotel();
 
         when(hotelRepository.findAll()).thenReturn(List.of(e1, e2));
-        when(hotelMapper.toDomain(e1)).thenReturn(d1);
-        when(hotelMapper.toDomain(e2)).thenReturn(d2);
+        when(hotelMapper.toDomain(e1)).thenReturn(h1);
+        when(hotelMapper.toDomain(e2)).thenReturn(h2);
 
-        List<Hotel> result = hotelService.findAll();
+        List<Hotel> result = service.findAll();
 
         assertEquals(2, result.size());
-        assertSame(d1, result.get(0));
-        assertSame(d2, result.get(1));
+        assertSame(h1, result.get(0));
+        assertSame(h2, result.get(1));
 
         verify(hotelRepository).findAll();
         verify(hotelMapper).toDomain(e1);
@@ -185,108 +171,113 @@ class HotelServiceImplTest {
     }
 
     @Test
-    void findByName_should_throw_when_name_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelService.findByName(null));
+    void findAll_whenEmpty_returnsEmpty_andDoesNotMap() {
+        when(hotelRepository.findAll()).thenReturn(List.of());
 
-        assertEquals("name must not be null", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
-    }
-
-    @Test
-    void findByName_should_throw_when_name_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelService.findByName("   "));
-
-        assertEquals("name must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
-    }
-
-    @Test
-    void findByName_should_return_empty_list_when_repository_returns_empty() {
-        when(hotelRepository.findByHotelName("Hotel Puerto")).thenReturn(List.of());
-
-        List<Hotel> result = hotelService.findByName("Hotel Puerto");
+        List<Hotel> result = service.findAll();
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
-        verify(hotelRepository).findByHotelName("Hotel Puerto");
-        verifyNoInteractions(hotelMapper);
+        verify(hotelRepository).findAll();
         verifyNoMoreInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
+    }
+
+    // ===================== findByName =====================
+
+    @Test
+    void findByName_whenNameNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.findByName(null));
+
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void findByName_should_map_all_entities_to_domain() {
-        HotelEntity e1 = mock(HotelEntity.class);
-        HotelEntity e2 = mock(HotelEntity.class);
+    void findByName_whenNameBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.findByName("   "));
 
-        Hotel d1 = new Hotel("H1", "Hotel Puerto", "Dir 1");
-        Hotel d2 = new Hotel("H2", "Hotel Puerto", "Dir 2");
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
+    }
 
-        when(hotelRepository.findByHotelName("Hotel Puerto")).thenReturn(List.of(e1, e2));
-        when(hotelMapper.toDomain(e1)).thenReturn(d1);
-        when(hotelMapper.toDomain(e2)).thenReturn(d2);
+    @Test
+    void findByName_ok_mapsList() {
+        HotelEntity e1 = anyHotelEntity();
+        HotelEntity e2 = anyHotelEntity();
+        Hotel h1 = anyHotel();
+        Hotel h2 = anyHotel();
 
-        List<Hotel> result = hotelService.findByName("Hotel Puerto");
+        when(hotelRepository.findByHotelName("Hilton")).thenReturn(List.of(e1, e2));
+        when(hotelMapper.toDomain(e1)).thenReturn(h1);
+        when(hotelMapper.toDomain(e2)).thenReturn(h2);
 
-        assertEquals(2, result.size());
-        assertSame(d1, result.get(0));
-        assertSame(d2, result.get(1));
+        List<Hotel> result = service.findByName("Hilton");
 
-        verify(hotelRepository).findByHotelName("Hotel Puerto");
+        assertEquals(List.of(h1, h2), result);
+
+        verify(hotelRepository).findByHotelName("Hilton");
         verify(hotelMapper).toDomain(e1);
         verify(hotelMapper).toDomain(e2);
         verifyNoMoreInteractions(hotelRepository, hotelMapper);
     }
 
     @Test
-    void deleteById_should_throw_when_id_is_null() {
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> hotelService.deleteById(null));
+    void findByName_whenEmpty_returnsEmpty_andDoesNotMap() {
+        when(hotelRepository.findByHotelName("Hilton")).thenReturn(List.of());
 
-        assertEquals("hotel id must not be null", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+        List<Hotel> result = service.findByName("Hilton");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(hotelRepository).findByHotelName("Hilton");
+        verifyNoMoreInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
+    }
+
+    // ===================== deleteById =====================
+
+    @Test
+    void deleteById_whenIdNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.deleteById(null));
+
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void deleteById_should_throw_when_id_is_blank() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> hotelService.deleteById(" \t"));
+    void deleteById_whenIdBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteById(""));
 
-        assertEquals("hotel id must not be blank", ex.getMessage());
-        verifyNoInteractions(hotelRepository, hotelMapper);
+        verifyNoInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void deleteById_should_return_false_when_hotel_does_not_exist() {
-        when(hotelRepository.existsById("H1")).thenReturn(false);
+    void deleteById_whenNotExists_returnsFalse_andDoesNotDelete() {
+        when(hotelRepository.existsById("h404")).thenReturn(false);
 
-        boolean result = hotelService.deleteById("H1");
+        boolean result = service.deleteById("h404");
 
         assertFalse(result);
-
-        verify(hotelRepository).existsById("H1");
-        verify(hotelRepository, never()).deleteById(anyString());
-        verifyNoInteractions(hotelMapper);
+        verify(hotelRepository).existsById("h404");
+        verify(hotelRepository, never()).deleteById(any());
         verifyNoMoreInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 
     @Test
-    void deleteById_should_delete_and_return_true_when_hotel_exists() {
-        when(hotelRepository.existsById("H1")).thenReturn(true);
+    void deleteById_whenExists_deletesAndReturnsTrue() {
+        when(hotelRepository.existsById("h1")).thenReturn(true);
 
-        boolean result = hotelService.deleteById("H1");
+        boolean result = service.deleteById("h1");
 
         assertTrue(result);
-
-        verify(hotelRepository).existsById("H1");
-        verify(hotelRepository).deleteById("H1");
-        verifyNoInteractions(hotelMapper);
+        verify(hotelRepository).existsById("h1");
+        verify(hotelRepository).deleteById("h1");
         verifyNoMoreInteractions(hotelRepository);
+        verifyNoInteractions(hotelMapper);
     }
 }

@@ -1,7 +1,6 @@
 package org.docencia.hotel.service.impl;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.docencia.hotel.domain.model.Hotel;
@@ -9,6 +8,7 @@ import org.docencia.hotel.mapper.jpa.HotelMapper;
 import org.docencia.hotel.persistence.jpa.entity.HotelEntity;
 import org.docencia.hotel.persistence.repository.jpa.HotelRepository;
 import org.docencia.hotel.service.api.HotelService;
+import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,7 +37,7 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public Hotel save(Hotel hotel) {
-        Objects.requireNonNull(hotel, "hotel must not be null");
+        Guard.requireNonNull(hotel, "hotel");
 
         HotelEntity hotelEntityToSave = hotelMapper.toEntity(hotel);
         HotelEntity savHotelEntity = hotelRepository.save(hotelEntityToSave);
@@ -46,24 +46,17 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public boolean existsById(String id) {
-        Objects.requireNonNull(id, "hotel id must not be null");
-
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
+        Guard.requireNonBlank(id, "hotel id");
 
         return hotelRepository.existsById(id);
     }
 
     @Override
     public Optional<Hotel> findById(String id) {
-        Objects.requireNonNull(id, "hotel id must not be null");
+        Guard.requireNonBlank(id, "hotel id");
 
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
-
-        return hotelRepository.findById(id).map(hotelMapper::toDomain);
+        return hotelRepository.findById(id).
+                map(hotelMapper::toDomain);
     }
 
     @Override
@@ -76,10 +69,7 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public List<Hotel> findByName(String name) {
-        Objects.requireNonNull(name, "name must not be null");
-        if (name.isBlank()) {
-            throw new IllegalArgumentException("name must not be blank");
-        }
+        Guard.requireNonBlank(name, "hotel name");
 
         return hotelRepository.findByHotelName(name)
                 .stream()
@@ -89,11 +79,7 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public boolean deleteById(String id) {
-        Objects.requireNonNull(id, "hotel id must not be null");
-
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
+        Guard.requireNonBlank(id, "hotel id");
 
         if (!hotelRepository.existsById(id)) {
             return false;

@@ -1,12 +1,13 @@
 package org.docencia.hotel.domain.impl;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.docencia.hotel.domain.api.HotelDomain;
 import org.docencia.hotel.domain.model.Hotel;
 import org.docencia.hotel.service.api.HotelService;
+import org.docencia.hotel.service.api.RoomService;
+import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,37 +19,33 @@ public class HotelDomainImpl implements HotelDomain {
     private final HotelService hotelService;
 
     /**
+     * Servicio de habitaciones.
+     */
+    private final RoomService roomService;
+
+    /**
      * Constructor de la implementación del dominio de hoteles.
      * 
      * @param hotelService Servicio de hoteles
+     * @param roomService  Servicio de habitaciones
      */
-    public HotelDomainImpl(HotelService hotelService) {
+    public HotelDomainImpl(HotelService hotelService, RoomService roomService) {
         this.hotelService = hotelService;
+        this.roomService = roomService;
     }
 
     @Override
     public Hotel createHotel(Hotel hotel) {
-        Objects.requireNonNull(hotel, "hotel must not be null");
+        Guard.requireNonNull(hotel, "hotel");
+        Guard.requireNonBlank(hotel.getId(), "hotel id");
+        Guard.requireNonBlank(hotel.getHotelName(), "hotel name");
 
-        if (hotel.getId() == null || hotel.getId().isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
-
-        if (hotel.getHotelName() == null || hotel.getHotelName().isBlank()) {
-            throw new IllegalArgumentException("hotel name must not be blank");
-        }
-
-        return hotelService.findById(hotel.getId())
-                .orElseGet(() -> hotelService.save(hotel));
+        return hotelService.save(hotel);
     }
 
     @Override
     public Optional<Hotel> getHotelById(String id) {
-        Objects.requireNonNull(id, "hotel id must not be null");
-
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
+        Guard.requireNonBlank(id, "hotel id");
 
         return hotelService.findById(id);
     }
@@ -59,46 +56,35 @@ public class HotelDomainImpl implements HotelDomain {
     }
 
     @Override
+    public List<Hotel> getHotelsByName(String name) {
+        Guard.requireNonBlank(name, "name");
+
+        return hotelService.findByName(name);
+    }
+
+    @Override
     public Hotel updateHotel(String id, Hotel hotel) {
-        Objects.requireNonNull(id, "hotel id must not be null");
-        Objects.requireNonNull(hotel, "hotel must not be null");
-
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
-        }
-
-        if (hotel.getHotelName() == null || hotel.getHotelName().isBlank()) {
-            throw new IllegalArgumentException("hotel name must not be blank");
-        }
+        Guard.requireNonBlank(id, "hotel id");
+        Guard.requireNonNull(hotel, "hotel");
+        Guard.requireNonBlank(hotel.getHotelName(), "hotel name");
 
         if (!hotelService.existsById(id)) {
             throw new IllegalArgumentException("hotel not found: " + id);
         }
 
         hotel.setId(id);
-
         return hotelService.save(hotel);
     }
 
     @Override
     public boolean deleteHotel(String id) {
-        Objects.requireNonNull(id, "hotel id must not be null");
+        Guard.requireNonBlank(id, "hotel id");
 
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("hotel id must not be blank");
+        if (!hotelService.existsById(id)) {
+            return false;
         }
 
+        roomService.deleteByHotelId(id);
         return hotelService.deleteById(id);
-    }
-
-    @Override
-    public List<Hotel> findHotelsByName(String name) {
-        Objects.requireNonNull(name, "name must not be null");
-
-        if (name.isBlank()) {
-            throw new IllegalArgumentException("name must not be blank");
-        }
-
-        return hotelService.findByName(name);
     }
 }

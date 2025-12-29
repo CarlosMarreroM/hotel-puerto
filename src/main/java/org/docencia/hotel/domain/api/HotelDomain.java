@@ -40,6 +40,14 @@ public interface HotelDomain {
     List<Hotel> getAllHotels();
 
     /**
+     * Busca hoteles por su nombre.
+     * 
+     * @param name Nombre del hotel a buscar
+     * @return Lista de hoteles que coinciden con el nombre proporcionado
+     */
+    List<Hotel> getHotelsByName(String name);
+
+    /**
      * Actualiza los datos de un hotel existente.
      *
      * @param id Identificador del hotel a actualizar  
@@ -55,13 +63,4 @@ public interface HotelDomain {
      * @return true si el hotel fue eliminado, false si no existía
      */
     boolean deleteHotel(String id);
-
-    /**
-     * Busca hoteles por su nombre.
-     * 
-     * @param name Nombre del hotel a buscar
-     * @return Lista de hoteles que coinciden con el nombre proporcionado
-     */
-    List<Hotel> findHotelsByName(String name);
-
 }
