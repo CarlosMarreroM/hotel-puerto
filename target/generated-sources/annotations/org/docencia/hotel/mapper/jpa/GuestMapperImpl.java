@@ -7,22 +7,11 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-12-29T01:24:25+0000",
+    date = "2025-12-30T23:57:08+0000",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.17 (Azul Systems, Inc.)"
 )
 @Component
 public class GuestMapperImpl implements GuestMapper {
-
-    @Override
-    public GuestEntity toEntity(Guest domain) {
-        if ( domain == null ) {
-            return null;
-        }
-
-        GuestEntity guestEntity = new GuestEntity();
-
-        return guestEntity;
-    }
 
     @Override
     public Guest toDomain(GuestEntity entity) {
@@ -32,6 +21,27 @@ public class GuestMapperImpl implements GuestMapper {
 
         Guest guest = new Guest();
 
+        guest.setId( entity.getId() );
+        guest.setName( entity.getName() );
+        guest.setEmail( entity.getEmail() );
+        guest.setPhone( entity.getPhone() );
+
         return guest;
+    }
+
+    @Override
+    public GuestEntity toEntity(Guest domain) {
+        if ( domain == null ) {
+            return null;
+        }
+
+        GuestEntity guestEntity = new GuestEntity();
+
+        guestEntity.setId( domain.getId() );
+        guestEntity.setName( domain.getName() );
+        guestEntity.setEmail( domain.getEmail() );
+        guestEntity.setPhone( domain.getPhone() );
+
+        return guestEntity;
     }
 }
