@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.docencia.hotel.domain.model.Hotel;
+import org.docencia.hotel.service.api.BookingService;
 import org.docencia.hotel.service.api.HotelService;
 import org.docencia.hotel.service.api.RoomService;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ class HotelDomainImplTest {
     @Mock
     private RoomService roomService;
 
+    @Mock
+    private BookingService bookingService;
+
     @InjectMocks
     private HotelDomainImpl domain;
 
@@ -40,7 +44,7 @@ class HotelDomainImplTest {
     @Test
     void createHotel_whenHotelNull_throwsNullPointerException_andNoInteractions() {
         assertThrows(NullPointerException.class, () -> domain.createHotel(null));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -48,7 +52,7 @@ class HotelDomainImplTest {
         Hotel h = hotel(null, "Hilton");
 
         assertThrows(NullPointerException.class, () -> domain.createHotel(h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -56,7 +60,7 @@ class HotelDomainImplTest {
         Hotel h = hotel("   ", "Hilton");
 
         assertThrows(IllegalArgumentException.class, () -> domain.createHotel(h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -64,7 +68,7 @@ class HotelDomainImplTest {
         Hotel h = hotel("h1", null);
 
         assertThrows(NullPointerException.class, () -> domain.createHotel(h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -72,22 +76,39 @@ class HotelDomainImplTest {
         Hotel h = hotel("h1", "   ");
 
         assertThrows(IllegalArgumentException.class, () -> domain.createHotel(h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
-    void createHotel_ok_delegatesToHotelServiceSave() {
+    void createHotel_whenHotelAlreadyExists_throwsIllegalStateException_andDoesNotSave() {
+        Hotel input = hotel("h1", "Hilton");
+        when(hotelService.existsById("h1")).thenReturn(true);
+
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, () -> domain.createHotel(input));
+        assertEquals("hotel already exists: h1", ex.getMessage());
+
+        verify(hotelService).existsById("h1");
+        verifyNoMoreInteractions(hotelService);
+        verifyNoInteractions(roomService, bookingService);
+    }
+
+    @Test
+    void createHotel_ok_checksExists_thenDelegatesToHotelServiceSave() {
         Hotel input = hotel("h1", "Hilton");
         Hotel saved = hotel("h1", "Hilton");
 
+        when(hotelService.existsById("h1")).thenReturn(false);
         when(hotelService.save(input)).thenReturn(saved);
 
         Hotel result = domain.createHotel(input);
 
         assertSame(saved, result);
+
+        verify(hotelService).existsById("h1");
         verify(hotelService).save(input);
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     // ===================== getHotelById =====================
@@ -95,13 +116,13 @@ class HotelDomainImplTest {
     @Test
     void getHotelById_whenIdNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.getHotelById(null));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
     void getHotelById_whenIdBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.getHotelById("   "));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -113,9 +134,10 @@ class HotelDomainImplTest {
 
         assertTrue(result.isPresent());
         assertSame(h, result.get());
+
         verify(hotelService).findById("h1");
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     // ===================== getAllHotels =====================
@@ -128,9 +150,10 @@ class HotelDomainImplTest {
         List<Hotel> result = domain.getAllHotels();
 
         assertSame(expected, result);
+
         verify(hotelService).findAll();
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     // ===================== getHotelsByName =====================
@@ -138,13 +161,13 @@ class HotelDomainImplTest {
     @Test
     void getHotelsByName_whenNameNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.getHotelsByName(null));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
     void getHotelsByName_whenNameBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.getHotelsByName("   "));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -155,9 +178,10 @@ class HotelDomainImplTest {
         List<Hotel> result = domain.getHotelsByName("Hilton");
 
         assertSame(expected, result);
+
         verify(hotelService).findByName("Hilton");
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     // ===================== updateHotel =====================
@@ -167,7 +191,7 @@ class HotelDomainImplTest {
         Hotel h = hotel("x", "Hilton");
 
         assertThrows(NullPointerException.class, () -> domain.updateHotel(null, h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -175,13 +199,13 @@ class HotelDomainImplTest {
         Hotel h = hotel("x", "Hilton");
 
         assertThrows(IllegalArgumentException.class, () -> domain.updateHotel("   ", h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
     void updateHotel_whenHotelNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.updateHotel("h1", null));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -189,7 +213,7 @@ class HotelDomainImplTest {
         Hotel h = hotel("x", null);
 
         assertThrows(NullPointerException.class, () -> domain.updateHotel("h1", h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -197,7 +221,7 @@ class HotelDomainImplTest {
         Hotel h = hotel("x", "   ");
 
         assertThrows(IllegalArgumentException.class, () -> domain.updateHotel("h1", h));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
@@ -211,7 +235,7 @@ class HotelDomainImplTest {
 
         verify(hotelService).existsById("h404");
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     @Test
@@ -230,7 +254,7 @@ class HotelDomainImplTest {
         verify(hotelService).existsById("h1");
         verify(hotelService).save(h);
         verifyNoMoreInteractions(hotelService);
-        verifyNoInteractions(roomService);
+        verifyNoInteractions(roomService, bookingService);
     }
 
     // ===================== deleteHotel =====================
@@ -238,17 +262,17 @@ class HotelDomainImplTest {
     @Test
     void deleteHotel_whenIdNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.deleteHotel(null));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
     void deleteHotel_whenIdBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.deleteHotel("   "));
-        verifyNoInteractions(hotelService, roomService);
+        verifyNoInteractions(hotelService, roomService, bookingService);
     }
 
     @Test
-    void deleteHotel_whenHotelNotExists_returnsFalse_andDoesNotDeleteRoomsOrHotel() {
+    void deleteHotel_whenHotelNotExists_returnsFalse_andDoesNotCheckBookings_orDeleteAnything() {
         when(hotelService.existsById("h404")).thenReturn(false);
 
         boolean result = domain.deleteHotel("h404");
@@ -257,12 +281,34 @@ class HotelDomainImplTest {
 
         verify(hotelService).existsById("h404");
         verifyNoMoreInteractions(hotelService);
+
+        // importante: si no existe el hotel, ni mira bookings ni borra rooms
+        verifyNoInteractions(roomService, bookingService);
+    }
+
+    @Test
+    void deleteHotel_whenHasBookings_throwsIllegalArgumentException_andDoesNotDeleteRoomsOrHotel() {
+        when(hotelService.existsById("h1")).thenReturn(true);
+        when(bookingService.existsByHotelId("h1")).thenReturn(true);
+
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.deleteHotel("h1"));
+        assertEquals("cannot delete hotel h1 because it has bookings in its rooms", ex.getMessage());
+
+        verify(hotelService).existsById("h1");
+        verify(bookingService).existsByHotelId("h1");
+
+        verify(roomService, never()).deleteByHotelId(any());
+        verify(hotelService, never()).deleteById(any());
+
+        verifyNoMoreInteractions(hotelService, bookingService);
         verifyNoInteractions(roomService);
     }
 
     @Test
-    void deleteHotel_whenHotelExists_deletesRoomsThenDeletesHotel_andReturnsResult() {
+    void deleteHotel_whenNoBookings_deletesRoomsThenDeletesHotel_andReturnsResult() {
         when(hotelService.existsById("h1")).thenReturn(true);
+        when(bookingService.existsByHotelId("h1")).thenReturn(false);
         when(hotelService.deleteById("h1")).thenReturn(true);
 
         boolean result = domain.deleteHotel("h1");
@@ -270,8 +316,28 @@ class HotelDomainImplTest {
         assertTrue(result);
 
         verify(hotelService).existsById("h1");
+        verify(bookingService).existsByHotelId("h1");
         verify(roomService).deleteByHotelId("h1");
         verify(hotelService).deleteById("h1");
-        verifyNoMoreInteractions(hotelService, roomService);
+
+        verifyNoMoreInteractions(hotelService, roomService, bookingService);
+    }
+
+    @Test
+    void deleteHotel_whenNoBookings_deletesRoomsThenDeletesHotel_andReturnsFalseIfServiceReturnsFalse() {
+        when(hotelService.existsById("h1")).thenReturn(true);
+        when(bookingService.existsByHotelId("h1")).thenReturn(false);
+        when(hotelService.deleteById("h1")).thenReturn(false);
+
+        boolean result = domain.deleteHotel("h1");
+
+        assertFalse(result);
+
+        verify(hotelService).existsById("h1");
+        verify(bookingService).existsByHotelId("h1");
+        verify(roomService).deleteByHotelId("h1");
+        verify(hotelService).deleteById("h1");
+
+        verifyNoMoreInteractions(hotelService, roomService, bookingService);
     }
 }

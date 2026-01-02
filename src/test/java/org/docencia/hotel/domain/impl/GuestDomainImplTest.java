@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.docencia.hotel.domain.model.Guest;
 import org.docencia.hotel.domain.model.GuestPreferences;
+import org.docencia.hotel.service.api.BookingService;
 import org.docencia.hotel.service.api.GuestService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,9 @@ class GuestDomainImplTest {
 
     @Mock
     private GuestService guestService;
+
+    @Mock
+    private BookingService bookingService;
 
     @InjectMocks
     private GuestDomainImpl domain;
@@ -43,65 +47,93 @@ class GuestDomainImplTest {
     @Test
     void createGuest_whenGuestNull_throwsNullPointerException_andNoInteractions() {
         assertThrows(NullPointerException.class, () -> domain.createGuest(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void createGuest_whenGuestIdNull_throwsNullPointerException_andNoInteractions() {
         Guest g = guest(null, "Ana");
+
         assertThrows(NullPointerException.class, () -> domain.createGuest(g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void createGuest_whenGuestIdBlank_throwsIllegalArgumentException_andNoInteractions() {
         Guest g = guest("   ", "Ana");
+
         assertThrows(IllegalArgumentException.class, () -> domain.createGuest(g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void createGuest_whenGuestNameNull_throwsNullPointerException_andNoInteractions() {
         Guest g = guest("g1", null);
+
         assertThrows(NullPointerException.class, () -> domain.createGuest(g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void createGuest_whenGuestNameBlank_throwsIllegalArgumentException_andNoInteractions() {
         Guest g = guest("g1", "   ");
+
         assertThrows(IllegalArgumentException.class, () -> domain.createGuest(g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
-    void createGuest_whenNoPreferences_delegatesToSave() {
+    void createGuest_whenGuestAlreadyExists_throwsIllegalStateException_andDoesNotSave() {
+        Guest input = guest("g1", "Ana");
+        when(guestService.existsById("g1")).thenReturn(true);
+
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, () -> domain.createGuest(input));
+        assertEquals("guest already exists: g1", ex.getMessage());
+
+        verify(guestService).existsById("g1");
+        verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
+    }
+
+    @Test
+    void createGuest_whenNoPreferences_checksExists_thenDelegatesToSave() {
         Guest input = guest("g1", "Ana");
         Guest saved = guest("g1", "Ana");
+
+        when(guestService.existsById("g1")).thenReturn(false);
         when(guestService.save(input)).thenReturn(saved);
 
         Guest result = domain.createGuest(input);
 
         assertSame(saved, result);
+
+        verify(guestService).existsById("g1");
         verify(guestService).save(input);
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
-    void createGuest_whenPreferencesPresent_setsGuestIdInPreferences_thenDelegatesToSave() {
+    void createGuest_whenPreferencesPresent_setsGuestIdInPreferences_thenChecksExists_thenDelegatesToSave() {
         Guest input = guest("g1", "Ana");
         GuestPreferences gp = prefs("willBeOverwritten");
         input.setPreferences(gp);
 
         Guest saved = guest("g1", "Ana");
+
+        when(guestService.existsById("g1")).thenReturn(false);
         when(guestService.save(input)).thenReturn(saved);
 
         Guest result = domain.createGuest(input);
 
         assertEquals("g1", gp.getGuestId(), "Debe forzar guestId en preferences al crear");
         assertSame(saved, result);
+
+        verify(guestService).existsById("g1");
         verify(guestService).save(input);
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== getGuestById =====================
@@ -109,13 +141,13 @@ class GuestDomainImplTest {
     @Test
     void getGuestById_whenIdNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.getGuestById(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void getGuestById_whenIdBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.getGuestById("  "));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -127,8 +159,10 @@ class GuestDomainImplTest {
 
         assertTrue(result.isPresent());
         assertSame(g, result.get());
+
         verify(guestService).findGuestById("g1");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== getAllGuests =====================
@@ -141,8 +175,10 @@ class GuestDomainImplTest {
         List<Guest> result = domain.getAllGuests();
 
         assertSame(expected, result);
+
         verify(guestService).findAllGuests();
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== updateGuest =====================
@@ -150,35 +186,39 @@ class GuestDomainImplTest {
     @Test
     void updateGuest_whenIdNull_throwsNullPointerException() {
         Guest g = guest("x", "Ana");
+
         assertThrows(NullPointerException.class, () -> domain.updateGuest(null, g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updateGuest_whenIdBlank_throwsIllegalArgumentException() {
         Guest g = guest("x", "Ana");
+
         assertThrows(IllegalArgumentException.class, () -> domain.updateGuest("  ", g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updateGuest_whenGuestNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.updateGuest("g1", null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updateGuest_whenNameNull_throwsNullPointerException() {
         Guest g = guest("x", null);
+
         assertThrows(NullPointerException.class, () -> domain.updateGuest("g1", g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updateGuest_whenNameBlank_throwsIllegalArgumentException() {
         Guest g = guest("x", "   ");
+
         assertThrows(IllegalArgumentException.class, () -> domain.updateGuest("g1", g));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -186,12 +226,13 @@ class GuestDomainImplTest {
         Guest g = guest("x", "Ana");
         when(guestService.existsById("g404")).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> domain.updateGuest("g404", g));
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.updateGuest("g404", g));
         assertEquals("guest not found: g404", ex.getMessage());
 
         verify(guestService).existsById("g404");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
@@ -210,6 +251,7 @@ class GuestDomainImplTest {
         verify(guestService).existsById("g1");
         verify(guestService).save(g);
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
@@ -225,9 +267,11 @@ class GuestDomainImplTest {
 
         assertEquals("g1", g.getId());
         assertEquals("g1", gp.getGuestId(), "Debe forzar guestId en preferences al actualizar");
+
         verify(guestService).existsById("g1");
         verify(guestService).save(g);
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== deleteGuest =====================
@@ -235,38 +279,62 @@ class GuestDomainImplTest {
     @Test
     void deleteGuest_whenIdNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.deleteGuest(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void deleteGuest_whenIdBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.deleteGuest("  "));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
-    void deleteGuest_whenGuestNotExists_returnsFalse_andDoesNotDeleteAnything() {
+    void deleteGuest_whenGuestNotExists_returnsFalse_andDoesNotCheckBookings_orDeleteAnything() {
         when(guestService.existsById("g404")).thenReturn(false);
 
         boolean result = domain.deleteGuest("g404");
 
         assertFalse(result);
+
         verify(guestService).existsById("g404");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
-    void deleteGuest_whenGuestExists_deletesPreferences_thenDeletesGuest_andReturnsResult() {
+    void deleteGuest_whenHasBookings_throwsIllegalArgumentException_andDoesNotDeleteAnything() {
         when(guestService.existsById("g1")).thenReturn(true);
+        when(bookingService.existsByGuestId("g1")).thenReturn(true);
+
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.deleteGuest("g1"));
+        assertEquals("cannot delete guest g1 because it has bookings", ex.getMessage());
+
+        verify(guestService).existsById("g1");
+        verify(bookingService).existsByGuestId("g1");
+
+        verify(guestService, never()).deletePreferencesByGuestId(any());
+        verify(guestService, never()).deleteGuestById(any());
+
+        verifyNoMoreInteractions(guestService, bookingService);
+    }
+
+    @Test
+    void deleteGuest_whenGuestExists_andNoBookings_deletesPreferences_thenDeletesGuest_andReturnsResult() {
+        when(guestService.existsById("g1")).thenReturn(true);
+        when(bookingService.existsByGuestId("g1")).thenReturn(false);
         when(guestService.deleteGuestById("g1")).thenReturn(true);
 
         boolean result = domain.deleteGuest("g1");
 
         assertTrue(result);
+
         verify(guestService).existsById("g1");
+        verify(bookingService).existsByGuestId("g1");
         verify(guestService).deletePreferencesByGuestId("g1");
         verify(guestService).deleteGuestById("g1");
-        verifyNoMoreInteractions(guestService);
+
+        verifyNoMoreInteractions(guestService, bookingService);
     }
 
     // ===================== UpdatePreferences =====================
@@ -274,21 +342,23 @@ class GuestDomainImplTest {
     @Test
     void updatePreferences_whenGuestIdNull_throwsNullPointerException() {
         GuestPreferences p = prefs("x");
+
         assertThrows(NullPointerException.class, () -> domain.UpdatePreferences(null, p));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updatePreferences_whenGuestIdBlank_throwsIllegalArgumentException() {
         GuestPreferences p = prefs("x");
+
         assertThrows(IllegalArgumentException.class, () -> domain.UpdatePreferences("  ", p));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updatePreferences_whenPreferencesNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.UpdatePreferences("g1", null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -296,21 +366,22 @@ class GuestDomainImplTest {
         GuestPreferences p = prefs("x");
         when(guestService.existsById("g404")).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> domain.UpdatePreferences("g404", p));
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.UpdatePreferences("g404", p));
         assertEquals("guest not found: g404", ex.getMessage());
 
         verify(guestService).existsById("g404");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
-    void updatePreferences_ok_setsGuestId_thenDelegatesToServiceUpdatePreferences() {
+    void updatePreferences_ok_setsGuestId_thenDelegatesToServiceSavedPreferences() {
         GuestPreferences p = prefs("willBeOverwritten");
         GuestPreferences expected = prefs("g1");
 
         when(guestService.existsById("g1")).thenReturn(true);
-        when(guestService.updatePreferences(p)).thenReturn(expected);
+        when(guestService.savedPreferences(p)).thenReturn(expected);
 
         GuestPreferences result = domain.UpdatePreferences("g1", p);
 
@@ -318,8 +389,9 @@ class GuestDomainImplTest {
         assertSame(expected, result);
 
         verify(guestService).existsById("g1");
-        verify(guestService).updatePreferences(p);
+        verify(guestService).savedPreferences(p);
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== getPreferencesByGuestId =====================
@@ -327,13 +399,13 @@ class GuestDomainImplTest {
     @Test
     void getPreferencesByGuestId_whenNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.getPreferencesByGuestId(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void getPreferencesByGuestId_whenBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.getPreferencesByGuestId("  "));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -348,6 +420,7 @@ class GuestDomainImplTest {
 
         verify(guestService).findPreferencesByGuestId("g1");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== deletePreferencesByGuestId =====================
@@ -355,13 +428,13 @@ class GuestDomainImplTest {
     @Test
     void deletePreferencesByGuestId_whenNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.deletePreferencesByGuestId(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void deletePreferencesByGuestId_whenBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.deletePreferencesByGuestId("  "));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -371,8 +444,10 @@ class GuestDomainImplTest {
         boolean result = domain.deletePreferencesByGuestId("g1");
 
         assertTrue(result);
+
         verify(guestService).deletePreferencesByGuestId("g1");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     // ===================== getGuestByIdWithPreferences =====================
@@ -380,13 +455,13 @@ class GuestDomainImplTest {
     @Test
     void getGuestByIdWithPreferences_whenIdNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> domain.getGuestByIdWithPreferences(null));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void getGuestByIdWithPreferences_whenIdBlank_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> domain.getGuestByIdWithPreferences("  "));
-        verifyNoInteractions(guestService);
+        verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
@@ -396,13 +471,16 @@ class GuestDomainImplTest {
         Optional<Guest> result = domain.getGuestByIdWithPreferences("g404");
 
         assertTrue(result.isEmpty());
+
         verify(guestService).findGuestById("g404");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
     void getGuestByIdWithPreferences_whenGuestFound_andNoPreferences_setsNullPreferences() {
         Guest g = guest("g1", "Ana");
+
         when(guestService.findGuestById("g1")).thenReturn(Optional.of(g));
         when(guestService.findPreferencesByGuestId("g1")).thenReturn(Optional.empty());
 
@@ -415,6 +493,7 @@ class GuestDomainImplTest {
         verify(guestService).findGuestById("g1");
         verify(guestService).findPreferencesByGuestId("g1");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 
     @Test
@@ -434,5 +513,6 @@ class GuestDomainImplTest {
         verify(guestService).findGuestById("g1");
         verify(guestService).findPreferencesByGuestId("g1");
         verifyNoMoreInteractions(guestService);
+        verifyNoInteractions(bookingService);
     }
 }

@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.docencia.hotel.domain.api.GuestDomain;
 import org.docencia.hotel.domain.model.Guest;
 import org.docencia.hotel.domain.model.GuestPreferences;
+import org.docencia.hotel.service.api.BookingService;
 import org.docencia.hotel.service.api.GuestService;
 import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,18 @@ public class GuestDomainImpl implements GuestDomain {
     private final GuestService guestService;
 
     /**
+     * Servicio de reservas.
+     */
+    private final BookingService bookingService;
+
+    /**
      * Constructor de la clase GuestDomainImpl.
      * 
      * @param guestService Servicio de gestion de huespedes.
      */
-    public GuestDomainImpl(GuestService guestService) {
+    public GuestDomainImpl(GuestService guestService, BookingService bookingService) {
         this.guestService = guestService;
+        this.bookingService = bookingService;
     }
 
     @Override
@@ -32,6 +39,10 @@ public class GuestDomainImpl implements GuestDomain {
         Guard.requireNonNull(guest, "guest");
         Guard.requireNonBlank(guest.getId(), "guest id");
         Guard.requireNonBlank(guest.getName(), "guest name");
+
+        if (guestService.existsById(guest.getId())) {
+            throw new IllegalStateException("guest already exists: " + guest.getId());
+        }
 
         GuestPreferences preferences = guest.getPreferences();
 
@@ -80,8 +91,11 @@ public class GuestDomainImpl implements GuestDomain {
             return false;
         }
 
-        guestService.deletePreferencesByGuestId(id);
+        if (bookingService.existsByGuestId(id)) {
+            throw new IllegalArgumentException("cannot delete guest " + id + " because it has bookings");
+        }
 
+        guestService.deletePreferencesByGuestId(id);
         return guestService.deleteGuestById(id);
     }
 
@@ -96,7 +110,7 @@ public class GuestDomainImpl implements GuestDomain {
 
         preferences.setGuestId(guestId);
 
-        return guestService.updatePreferences(preferences);
+        return guestService.savedPreferences(preferences);
     }
 
     @Override

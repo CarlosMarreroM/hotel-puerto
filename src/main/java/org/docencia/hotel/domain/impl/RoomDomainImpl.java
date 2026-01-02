@@ -5,17 +5,12 @@ import java.util.Optional;
 
 import org.docencia.hotel.domain.api.RoomDomain;
 import org.docencia.hotel.domain.model.Room;
+import org.docencia.hotel.service.api.BookingService;
 import org.docencia.hotel.service.api.HotelService;
 import org.docencia.hotel.service.api.RoomService;
 import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
 
-/**
- * Implementación del dominio de habitaciones.
- *
- * Esta clase proporciona la lógica de negocio
- * para la gestión de habitaciones dentro del sistema.
- */
 @Service
 public class RoomDomainImpl implements RoomDomain {
 
@@ -30,14 +25,21 @@ public class RoomDomainImpl implements RoomDomain {
     private final HotelService hotelService;
 
     /**
+     * Servicio de reservas.
+     */
+    private final BookingService bookingService;
+
+    /**
      * Constructor de la implementación del dominio de habitaciones.
      * 
-     * @param roomService  Servicio de habitaciones
-     * @param hotelService Servicio de hoteles
+     * @param roomService    Servicio de habitaciones
+     * @param hotelService   Servicio de hoteles
+     * @param bookingService Servicio de reservas
      */
-    public RoomDomainImpl(RoomService roomService, HotelService hotelService) {
+    public RoomDomainImpl(RoomService roomService, HotelService hotelService, BookingService bookingService) {
         this.roomService = roomService;
         this.hotelService = hotelService;
+        this.bookingService = bookingService;
     }
 
     @Override
@@ -46,6 +48,10 @@ public class RoomDomainImpl implements RoomDomain {
         Guard.requireNonBlank(room.getId(), "room id");
         Guard.requireNonBlank(room.getNumber(), "room number");
         Guard.requireNonBlank(room.getHotelId(), "hotel id");
+
+        if (roomService.existsById(room.getId())) {
+            throw new IllegalStateException("room already exists: " + room.getId());
+        }
 
         if (!hotelService.existsById(room.getHotelId())) {
             throw new IllegalArgumentException("Hotel with id " + room.getHotelId() + " does not exist");
@@ -112,6 +118,14 @@ public class RoomDomainImpl implements RoomDomain {
     public boolean deleteRoom(String id) {
         Guard.requireNonBlank(id, "room id");
 
+        if (!roomService.existsById(id)) {
+            return false;
+        }
+
+        if (bookingService.existsByRoomId(id)) {
+            throw new IllegalArgumentException("cannot delete room " + id + " because it has bookings");
+        }
+
         return roomService.deleteById(id);
     }
 
@@ -121,6 +135,11 @@ public class RoomDomainImpl implements RoomDomain {
 
         if (!hotelService.existsById(hotelId)) {
             throw new IllegalArgumentException("Hotel with id " + hotelId + " does not exist");
+        }
+
+        if (bookingService.existsByHotelId(hotelId)) {
+            throw new IllegalArgumentException(
+                    "cannot delete rooms for hotel " + hotelId + " because there are bookings");
         }
 
         return roomService.deleteByHotelId(hotelId);

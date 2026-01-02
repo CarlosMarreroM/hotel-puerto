@@ -30,7 +30,7 @@ public interface GuestService {
      * @param preferences Preferencias del huesped a actualizar.
      * @return Preferencias actualizadas.
      */
-    GuestPreferences updatePreferences(GuestPreferences preferences);
+    GuestPreferences savedPreferences(GuestPreferences preferences);
 
     /**
      * Comprueba si un huesped existe por su identificador.

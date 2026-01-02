@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.docencia.hotel.domain.api.HotelDomain;
 import org.docencia.hotel.domain.model.Hotel;
+import org.docencia.hotel.service.api.BookingService;
 import org.docencia.hotel.service.api.HotelService;
 import org.docencia.hotel.service.api.RoomService;
 import org.docencia.hotel.validation.Guard;
@@ -24,14 +25,21 @@ public class HotelDomainImpl implements HotelDomain {
     private final RoomService roomService;
 
     /**
+     * Servicio de reservas.
+     */
+    private final BookingService bookingService;
+
+    /**
      * Constructor de la implementación del dominio de hoteles.
      * 
-     * @param hotelService Servicio de hoteles
-     * @param roomService  Servicio de habitaciones
+     * @param hotelService   Servicio de hoteles
+     * @param roomService    Servicio de habitaciones
+     * @param bookingService Servicio de reservas
      */
-    public HotelDomainImpl(HotelService hotelService, RoomService roomService) {
+    public HotelDomainImpl(HotelService hotelService, RoomService roomService, BookingService bookingService) {
         this.hotelService = hotelService;
         this.roomService = roomService;
+        this.bookingService = bookingService;
     }
 
     @Override
@@ -39,6 +47,10 @@ public class HotelDomainImpl implements HotelDomain {
         Guard.requireNonNull(hotel, "hotel");
         Guard.requireNonBlank(hotel.getId(), "hotel id");
         Guard.requireNonBlank(hotel.getHotelName(), "hotel name");
+
+        if (hotelService.existsById(hotel.getId())) {
+            throw new IllegalStateException("hotel already exists: " + hotel.getId());
+        }
 
         return hotelService.save(hotel);
     }
@@ -82,6 +94,11 @@ public class HotelDomainImpl implements HotelDomain {
 
         if (!hotelService.existsById(id)) {
             return false;
+        }
+
+        if (bookingService.existsByHotelId(id)) {
+            throw new IllegalArgumentException(
+                    "cannot delete hotel " + id + " because it has bookings in its rooms");
         }
 
         roomService.deleteByHotelId(id);

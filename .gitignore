@@ -26,4 +26,8 @@ replay_pid*
 # Maven target directory
 target/
 
+# IDE specific files
 .vscode/
+
+# Ignore data directory
+/data

@@ -46,6 +46,14 @@ public interface BookingService {
     boolean existsByRoomId(String roomId);
 
     /**
+     * Verifica si existen reservas asociadas a un hotel específico.
+     * 
+     * @param hotelId ID del hotel.
+     * @return true si existen reservas para el hotel, false en caso contrario.
+     */
+    boolean existsByHotelId(String hotelId);
+
+    /**
      * Obtiene todas las reservas.
      * 
      * @return Lista de todas las reservas.

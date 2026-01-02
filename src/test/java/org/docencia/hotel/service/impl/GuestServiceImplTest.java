@@ -74,19 +74,57 @@ class GuestServiceImplTest {
     }
 
     @Test
-    void save_whenGuestIdNull_throwsNullPointerException_andNoInteractions() {
-        Guest g = new Guest(); // id null
+    void save_whenGuestIdNull_doesNotValidateId_delegatesToJpa_andDoesNotTouchMongoIfNoPrefs() {
+        Guest input = new Guest(); // id null
+        input.setPreferences(null);
 
-        assertThrows(NullPointerException.class, () -> service.save(g));
-        verifyNoInteractions(guestJpaRepository, guestPreferencesRepository, guestMapper, guestPreferencesMapper);
+        GuestEntity entityToSave = new GuestEntity();
+        GuestEntity savedEntity = new GuestEntity();
+        Guest mappedGuest = new Guest(); // lo que devuelve el mapper tras guardar
+
+        when(guestMapper.toEntity(input)).thenReturn(entityToSave);
+        when(guestJpaRepository.save(entityToSave)).thenReturn(savedEntity);
+        when(guestMapper.toDomain(savedEntity)).thenReturn(mappedGuest);
+
+        Guest result = service.save(input);
+
+        assertSame(mappedGuest, result);
+
+        verify(guestMapper).toEntity(input);
+        verify(guestJpaRepository).save(entityToSave);
+        verify(guestMapper).toDomain(savedEntity);
+
+        verifyNoInteractions(guestPreferencesRepository);
+        verifyNoInteractions(guestPreferencesMapper);
+
+        verifyNoMoreInteractions(guestJpaRepository, guestMapper);
     }
 
     @Test
-    void save_whenGuestIdBlank_throwsIllegalArgumentException_andNoInteractions() {
-        Guest g = guestWithId("   ");
+    void save_whenGuestIdBlank_doesNotValidateId_delegatesToJpa_andDoesNotTouchMongoIfNoPrefs() {
+        Guest input = guestWithId("   ");
+        input.setPreferences(null);
 
-        assertThrows(IllegalArgumentException.class, () -> service.save(g));
-        verifyNoInteractions(guestJpaRepository, guestPreferencesRepository, guestMapper, guestPreferencesMapper);
+        GuestEntity entityToSave = guestEntityWithId("   ");
+        GuestEntity savedEntity = guestEntityWithId("   ");
+        Guest mappedGuest = guestWithId("   ");
+
+        when(guestMapper.toEntity(input)).thenReturn(entityToSave);
+        when(guestJpaRepository.save(entityToSave)).thenReturn(savedEntity);
+        when(guestMapper.toDomain(savedEntity)).thenReturn(mappedGuest);
+
+        Guest result = service.save(input);
+
+        assertSame(mappedGuest, result);
+
+        verify(guestMapper).toEntity(input);
+        verify(guestJpaRepository).save(entityToSave);
+        verify(guestMapper).toDomain(savedEntity);
+
+        verifyNoInteractions(guestPreferencesRepository);
+        verifyNoInteractions(guestPreferencesMapper);
+
+        verifyNoMoreInteractions(guestJpaRepository, guestMapper);
     }
 
     @Test
@@ -117,7 +155,7 @@ class GuestServiceImplTest {
     @Test
     void save_whenPreferencesPresent_savesJpa_thenSavesMongo_andSetsPreferencesInReturnedGuest() {
         // input guest tiene preferences
-        GuestPreferences inputPrefs = prefsWithGuestId("g1"); // el service luego fuerza guestId del doc al id guardado
+        GuestPreferences inputPrefs = prefsWithGuestId("ignored");
         Guest input = guestWithId("g1");
         input.setPreferences(inputPrefs);
 
@@ -131,7 +169,7 @@ class GuestServiceImplTest {
         when(guestMapper.toDomain(savedEntity)).thenReturn(savedGuestFromJpa);
 
         // Mongo mapping/saving
-        GuestPreferencesDocument docToSave = prefsDocWithGuestId("ignored"); // se sobrescribe con savedGuestFromJpa.getId()
+        GuestPreferencesDocument docToSave = prefsDocWithGuestId("willBeOverwritten");
         GuestPreferencesDocument savedDoc = prefsDocWithGuestId("g1");
         GuestPreferences mappedBackPrefs = prefsWithGuestId("g1");
 
@@ -145,12 +183,10 @@ class GuestServiceImplTest {
         assertSame(mappedBackPrefs, result.getPreferences(), "Debe setear las preferencias ya persistidas en el Guest devuelto");
         assertEquals("g1", docToSave.getGuestId(), "Debe forzar el guestId del documento al id del Guest guardado");
 
-        // verify JPA
         verify(guestMapper).toEntity(input);
         verify(guestJpaRepository).save(entityToSave);
         verify(guestMapper).toDomain(savedEntity);
 
-        // verify Mongo
         verify(guestPreferencesMapper).toDocument(inputPrefs);
         verify(guestPreferencesRepository).save(docToSave);
         verify(guestPreferencesMapper).toDomain(savedDoc);
@@ -167,7 +203,7 @@ class GuestServiceImplTest {
         GuestEntity entityToSave = guestEntityWithId("g1");
         GuestEntity savedEntity = guestEntityWithId("g1");
 
-        // El mapper devuelve un Guest con id diferente (simula que JPA/mapper "normaliza" id)
+        // El mapper devuelve un Guest con id diferente
         Guest savedGuestFromJpa = guestWithId("G-001");
 
         when(guestMapper.toEntity(input)).thenReturn(entityToSave);
@@ -191,33 +227,33 @@ class GuestServiceImplTest {
         verifyNoMoreInteractions(guestJpaRepository, guestPreferencesRepository, guestMapper, guestPreferencesMapper);
     }
 
-    // ===================== updatePreferences =====================
+    // ===================== savedPreferences =====================
 
     @Test
-    void updatePreferences_whenNull_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> service.updatePreferences(null));
+    void savedPreferences_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.savedPreferences(null));
         verifyNoInteractions(guestPreferencesRepository, guestPreferencesMapper);
         verifyNoInteractions(guestJpaRepository, guestMapper);
     }
 
     @Test
-    void updatePreferences_whenGuestIdNull_throwsNullPointerException() {
+    void savedPreferences_whenGuestIdNull_throwsNullPointerException() {
         GuestPreferences p = new GuestPreferences(); // guestId null
-        assertThrows(NullPointerException.class, () -> service.updatePreferences(p));
+        assertThrows(NullPointerException.class, () -> service.savedPreferences(p));
         verifyNoInteractions(guestPreferencesRepository, guestPreferencesMapper);
         verifyNoInteractions(guestJpaRepository, guestMapper);
     }
 
     @Test
-    void updatePreferences_whenGuestIdBlank_throwsIllegalArgumentException() {
+    void savedPreferences_whenGuestIdBlank_throwsIllegalArgumentException() {
         GuestPreferences p = prefsWithGuestId("   ");
-        assertThrows(IllegalArgumentException.class, () -> service.updatePreferences(p));
+        assertThrows(IllegalArgumentException.class, () -> service.savedPreferences(p));
         verifyNoInteractions(guestPreferencesRepository, guestPreferencesMapper);
         verifyNoInteractions(guestJpaRepository, guestMapper);
     }
 
     @Test
-    void updatePreferences_ok_mapsSavesAndMapsBack() {
+    void savedPreferences_ok_mapsSavesAndMapsBack() {
         GuestPreferences input = prefsWithGuestId("g1");
         GuestPreferencesDocument doc = prefsDocWithGuestId("g1");
         GuestPreferencesDocument savedDoc = prefsDocWithGuestId("g1");
@@ -227,7 +263,7 @@ class GuestServiceImplTest {
         when(guestPreferencesRepository.save(doc)).thenReturn(savedDoc);
         when(guestPreferencesMapper.toDomain(savedDoc)).thenReturn(expected);
 
-        GuestPreferences result = service.updatePreferences(input);
+        GuestPreferences result = service.savedPreferences(input);
 
         assertSame(expected, result);
         verify(guestPreferencesMapper).toDocument(input);

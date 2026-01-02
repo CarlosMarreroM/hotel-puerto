@@ -84,10 +84,26 @@ class BookingDomainImplTest {
     }
 
     @Test
+    void createBooking_whenRoomIdBlank_throwsIllegalArgumentException_andNoInteractions() {
+        Booking b = booking("b1", "   ", "g1", null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> domain.createBooking(b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
     void createBooking_whenGuestIdNull_throwsNullPointerException_andNoInteractions() {
         Booking b = booking("b1", "r1", null, null, null);
 
         assertThrows(NullPointerException.class, () -> domain.createBooking(b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void createBooking_whenGuestIdBlank_throwsIllegalArgumentException_andNoInteractions() {
+        Booking b = booking("b1", "r1", "   ", null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> domain.createBooking(b));
         verifyNoInteractions(bookingService, roomService, guestService, hotelService);
     }
 
@@ -339,6 +355,18 @@ class BookingDomainImplTest {
     // ===================== getBookingsByGuestId =====================
 
     @Test
+    void getBookingsByGuestId_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.getBookingsByGuestId(null));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void getBookingsByGuestId_whenBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.getBookingsByGuestId("  "));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
     void getBookingsByGuestId_whenGuestNotFound_throwsIllegalArgumentException() {
         when(guestService.existsById("g404")).thenReturn(false);
 
@@ -368,6 +396,18 @@ class BookingDomainImplTest {
     }
 
     // ===================== getBookingsByHotelId =====================
+
+    @Test
+    void getBookingsByHotelId_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.getBookingsByHotelId(null));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void getBookingsByHotelId_whenBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.getBookingsByHotelId("  "));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
 
     @Test
     void getBookingsByHotelId_whenHotelNotFound_throwsIllegalArgumentException() {
@@ -401,9 +441,62 @@ class BookingDomainImplTest {
     // ===================== updateBooking =====================
 
     @Test
+    void updateBooking_whenIdNull_throwsNullPointerException() {
+        Booking b = booking("x", "r1", "g1", null, null);
+
+        assertThrows(NullPointerException.class, () -> domain.updateBooking(null, b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenIdBlank_throwsIllegalArgumentException() {
+        Booking b = booking("x", "r1", "g1", null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> domain.updateBooking("  ", b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenBookingNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.updateBooking("b1", null));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenRoomIdNull_throwsNullPointerException() {
+        Booking b = booking("x", null, "g1", null, null);
+
+        assertThrows(NullPointerException.class, () -> domain.updateBooking("b1", b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenRoomIdBlank_throwsIllegalArgumentException() {
+        Booking b = booking("x", "  ", "g1", null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> domain.updateBooking("b1", b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenGuestIdNull_throwsNullPointerException() {
+        Booking b = booking("x", "r1", null, null, null);
+
+        assertThrows(NullPointerException.class, () -> domain.updateBooking("b1", b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenGuestIdBlank_throwsIllegalArgumentException() {
+        Booking b = booking("x", "r1", "   ", null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> domain.updateBooking("b1", b));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
     void updateBooking_whenBookingNotExists_throwsIllegalArgumentException_andDoesNotSave() {
         Booking b = booking("ignored", "r1", "g1", "2025-01-01", "2025-01-02");
-
         when(bookingService.existsById("b404")).thenReturn(false);
 
         IllegalArgumentException ex =
@@ -413,6 +506,42 @@ class BookingDomainImplTest {
         verify(bookingService).existsById("b404");
         verifyNoMoreInteractions(bookingService);
         verifyNoInteractions(roomService, guestService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenGuestNotFound_throwsIllegalArgumentException_andDoesNotSave() {
+        Booking b = booking("x", "r1", "g404", "2025-01-01", "2025-01-02");
+
+        when(bookingService.existsById("b1")).thenReturn(true);
+        when(guestService.existsById("g404")).thenReturn(false);
+
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.updateBooking("b1", b));
+        assertEquals("guest not found: g404", ex.getMessage());
+
+        verify(bookingService).existsById("b1");
+        verify(guestService).existsById("g404");
+        verifyNoMoreInteractions(bookingService, guestService);
+        verifyNoInteractions(roomService, hotelService);
+    }
+
+    @Test
+    void updateBooking_whenRoomNotFound_throwsIllegalArgumentException_andDoesNotSave() {
+        Booking b = booking("x", "r404", "g1", "2025-01-01", "2025-01-02");
+
+        when(bookingService.existsById("b1")).thenReturn(true);
+        when(guestService.existsById("g1")).thenReturn(true);
+        when(roomService.existsById("r404")).thenReturn(false);
+
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> domain.updateBooking("b1", b));
+        assertEquals("room not found: r404", ex.getMessage());
+
+        verify(bookingService).existsById("b1");
+        verify(guestService).existsById("g1");
+        verify(roomService).existsById("r404");
+        verifyNoMoreInteractions(bookingService, guestService, roomService);
+        verifyNoInteractions(hotelService);
     }
 
     @Test
@@ -488,6 +617,18 @@ class BookingDomainImplTest {
     // ===================== deleteBookingsByGuestId =====================
 
     @Test
+    void deleteBookingsByGuestId_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.deleteBookingsByGuestId(null));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void deleteBookingsByGuestId_whenBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.deleteBookingsByGuestId("  "));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
     void deleteBookingsByGuestId_whenGuestNotFound_throwsIllegalArgumentException() {
         when(guestService.existsById("g404")).thenReturn(false);
 
@@ -515,6 +656,18 @@ class BookingDomainImplTest {
     }
 
     // ===================== deleteBookingsByRoomId =====================
+
+    @Test
+    void deleteBookingsByRoomId_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> domain.deleteBookingsByRoomId(null));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
+
+    @Test
+    void deleteBookingsByRoomId_whenBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> domain.deleteBookingsByRoomId("  "));
+        verifyNoInteractions(bookingService, roomService, guestService, hotelService);
+    }
 
     @Test
     void deleteBookingsByRoomId_whenRoomNotFound_throwsIllegalArgumentException() {

@@ -63,6 +63,7 @@ class BookingServiceImplTest {
         verify(bookingMapper).toEntity(input);
         verify(bookingRepository).save(toSave);
         verify(bookingMapper).toDomain(savedEntity);
+
         verifyNoMoreInteractions(bookingRepository, bookingMapper);
     }
 
@@ -140,6 +141,32 @@ class BookingServiceImplTest {
 
         assertTrue(result);
         verify(bookingRepository).existsByRoomId("r1");
+        verifyNoMoreInteractions(bookingRepository);
+        verifyNoInteractions(bookingMapper);
+    }
+
+    // ===================== existsByHotelId =====================
+
+    @Test
+    void existsByHotelId_whenNull_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> service.existsByHotelId(null));
+        verifyNoInteractions(bookingRepository, bookingMapper);
+    }
+
+    @Test
+    void existsByHotelId_whenBlank_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.existsByHotelId("  "));
+        verifyNoInteractions(bookingRepository, bookingMapper);
+    }
+
+    @Test
+    void existsByHotelId_ok_delegatesToExistsByRoomHotelId() {
+        when(bookingRepository.existsByRoomHotelId("h1")).thenReturn(true);
+
+        boolean result = service.existsByHotelId("h1");
+
+        assertTrue(result);
+        verify(bookingRepository).existsByRoomHotelId("h1");
         verifyNoMoreInteractions(bookingRepository);
         verifyNoInteractions(bookingMapper);
     }

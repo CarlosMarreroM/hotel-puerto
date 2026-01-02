@@ -58,6 +58,12 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public boolean existsByHotelId(String hotelId) {
+        Guard.requireNonBlank(hotelId, "hotel id");
+        return bookingRepository.existsByRoomHotelId(hotelId);
+    }
+
+    @Override
     public List<Booking> findAll() {
         return bookingRepository.findAll()
                 .stream()

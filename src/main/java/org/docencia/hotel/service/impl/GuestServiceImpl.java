@@ -66,7 +66,6 @@ public class GuestServiceImpl implements GuestService {
     @Override
     public Guest save(Guest guest) {
         Guard.requireNonNull(guest, "Guest");
-        Guard.requireNonBlank(guest.getId(), "Guest id");
 
         GuestEntity guestEntity = guestMapper.toEntity(guest);
         GuestEntity savedEntity = guestJpaRepository.save(guestEntity);
@@ -85,7 +84,7 @@ public class GuestServiceImpl implements GuestService {
     }
 
     @Override
-    public GuestPreferences updatePreferences(GuestPreferences preferences) {
+    public GuestPreferences savedPreferences(GuestPreferences preferences) {
         Guard.requireNonNull(preferences, "GuestPreferences");
         Guard.requireNonBlank(preferences.getGuestId(), "GuestPreferences guest id");
 
