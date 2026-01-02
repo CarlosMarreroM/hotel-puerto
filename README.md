@@ -1,250 +1,141 @@
-<div align="justify">
+# hotel-puerto
 
-<div align="center">
+Proyecto **Spring Boot** con arquitectura en capas y persistencia **polyglot**:
 
-# <img src=../../../../../images/computer.png width="40"> Code, Learn & Practice  
-**Persistencia Polyglot para `hotel-puerto` (H2 + MongoDB) con MapStruct + REST + Swagger + SOAP/CXF + JaCoCo**
-
-<img src=https://wwcdn.weddingwire.com/vendor/65001_70000/67195/thumbnails/1200x1200_1367340572768-hotel-evening-new.jpg width="400">
-
-</div>
-
----
-
-## 1. Objetivo
-
-Construir la base de un proyecto Spring Boot con **arquitectura en capas**, desacoplando:
-
-- **Dominio** (punto de entrada para REST y SOAP)
-- **Servicios** (uno por entidad)
-- **Mappers** (MapStruct) para transformar **Dominio ↔ Persistencia**
-- **Persistencia**:
-  - **H2 + JPA** para datos estructurados
-  - **MongoDB** para datos documentales (`GuestPreferences`)
-- **Tests unitarios** y **cobertura** con **JaCoCo**
-
-El caso especial es `Guest` (polyglot): parte en H2 (JPA) + parte en Mongo (NoSQL).
+- **H2 + JPA** para datos relacionales
+- **MongoDB** para datos documentales
+- **MapStruct** para mapeo entre capas
+- **REST + Swagger (OpenAPI)**
+- **SOAP (Apache CXF / JAX-WS)**
+- **Tests unitarios + cobertura JaCoCo**
 
 ---
 
-## 2. Arquitectura
-
-<div align="center">
-  <img src=images/arquitectura.png width="250">
-</div>
+## Arquitectura
 
 Reglas:
 
-- REST y SOAP **solo llaman al Dominio**.
-- Los Servicios trabajan con **modelos de dominio** (no entities).
-- Los Mappers se usan **en Servicios**.
-- Persistencia se encapsula en repositorios.
+- REST y SOAP **solo llaman al Dominio**
+- El Dominio **no depende** de JPA, Mongo ni frameworks
+- Los Servicios trabajan con **modelos de dominio**
+- Los Mappers (MapStruct) transforman **Dominio ↔ Persistencia**
+- Persistencia encapsulada en repositorios
+
+Persistencia polyglot:
+- **H2 (JPA)** → Hotel, Room, Booking, Guest
+- **MongoDB** → GuestPreferences
 
 ---
 
-## 3. Estructura de paquetes (conjunta)
+## Requisitos
 
-Paquete base: `org.docencia.hotel`
-
-```
-org.docencia.hotel
-├── HotelApplication
-├── config
-│   └── CxfConfig
-├── web
-│   ├── rest
-│   │   └── GuestController
-│   └── soap
-│       ├── GuestSoapService
-│       └── GuestSoapServiceImpl
-├── domain
-│   ├── api
-│   │   ├── HotelDomain
-│   │   ├── RoomDomain
-│   │   ├── BookingDomain
-│   │   └── GuestDomain
-│   ├── impl
-│   │   ├── HotelDomainImpl
-│   │   ├── RoomDomainImpl
-│   │   ├── BookingDomainImpl
-│   │   └── GuestDomainImpl
-│   ├── model
-│   │   ├── Hotel
-│   │   ├── Room
-│   │   ├── Booking
-│   │   ├── Guest
-│   │   └── GuestPreferences
-├── service
-│   ├── api
-│   │   ├── HotelService
-│   │   ├── RoomService
-│   │   ├── BookingService
-│   │   └── GuestService
-│   └── impl
-│       ├── HotelServiceImpl
-│       ├── RoomServiceImpl
-│       ├── BookingServiceImpl
-│       └── GuestServiceImpl
-├── mapper
-│   ├── jpa
-│   │   ├── HotelMapper
-│   │   ├── RoomMapper
-│   │   ├── BookingMapper
-│   │   └── GuestMapper
-│   └── nosql
-│       └── GuestPreferencesMapper
-└── persistence
-│   ├── jpa
-│   │   ├── AbstractJpaRepository
-│   │   ├── entity
-│   │   │   ├── HotelEntity
-│   │   │   ├── RoomEntity
-│   │   │   ├── BookingEntity
-│   │   │   └── GuestEntity
-|   |── nosql
-|   |   ├── document
-|   |   │   └── GuestPreferencesDocument
-│   └── repository
-│       ├── jpa
-│       │   ├── HotelRepository
-│       │   ├── RoomRepository
-│       │   ├── BookingRepository
-│       │   └── GuestJpaRepository
-│       └── nosql
-│           └── GuestPreferencesRepository
-```
+- Java **17**
+- Maven **3.9+**
+- Docker + Docker Compose (para MongoDB)
 
 ---
 
-## 4. Anotaciones REST
+## Arranque del proyecto
 
-En `org.docencia.hotel.web.rest`:
+### 1) Levantar MongoDB (Docker)
 
-- `@RestController`
-- `@RequestMapping("/api/...")`
-- `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`
-- `@PathVariable`, `@RequestBody`, `@RequestParam`
-- `@Valid`
-- `ResponseEntity<T>`
+Desde la raíz del proyecto:
 
-Swagger/OpenAPI (springdoc):
+    docker compose up -d
+    docker compose ps
 
-- `@Tag`, `@Operation`, `@ApiResponse(s)`
+Servicios disponibles:
 
----
+- MongoDB → `localhost:27017`
+- Mongo Express (UI) → `http://localhost:8081`
+  - Usuario: `root`
+  - Password: `root`
 
-## 5. Anotaciones SOAP (CXF / JAX-WS) y targetNamespace
+Para detener los contenedores:
 
-Convención:
+    docker compose down
 
-- `targetNamespace`: **`http://hotel.docencia.org/ws`**
-- `serviceName`: `{Entidad}SoapService`
-- `portName`: `{Entidad}SoapPort`
-
-Anotaciones:
-
-- `@WebService(name=..., targetNamespace=...)` (en el interface)
-- `@WebService(endpointInterface=..., targetNamespace=..., serviceName=..., portName=...)` (en la implementación)
-- `@WebMethod`, `@WebParam`, `@WebResult`
+> MongoDB persiste los datos en un volumen Docker (`mongo_data`).
 
 ---
 
-## 6. Consolas de BBDD (H2 y Mongo Express)
+### 2) Arrancar la aplicación Spring Boot
 
-### 6.1 Consola H2 (incluida en Spring Boot)
+    mvn clean spring-boot:run
 
-En este proyecto se habilita:
+La aplicación se inicia en:
 
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:hotel_puerto`
-- User: `sa`
-- Password: *(vacío)*
-
-> Nota: H2 en memoria se reinicia al parar la aplicación.
-
-### 6.2 MongoDB + Mongo Express (Docker Compose)
-
-Se incluye `docker-compose.yml` para levantar:
-
-- MongoDB: `localhost:27017`
-- Mongo Express (UI): `http://localhost:8081`
-
-Credenciales (según compose):
-
-- Usuario: `root`
-- Password: `root`
+- `http://localhost:8080`
 
 ---
 
-## 7. Arranque del proyecto
+## Consolas y URLs útiles
 
-### 7.1 Levantar MongoDB + Mongo Express
-
-```bash
-docker compose up -d
-docker compose ps
-```
-
-### 7.2 Arrancar la app
-
-```bash
-mvn clean spring-boot:run
-```
-
----
-
-## 8. Endpoints útiles
-
-### REST
+### Swagger / OpenAPI (REST)
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-### SOAP (CXF)
+---
 
-Se configura `cxf.path=/services`.
+### Consola H2 (Base de datos relacional)
 
-- Endpoint guest: `http://localhost:8080/services/guest`
-- WSDL guest: `http://localhost:8080/services/guest?wsdl`
+- H2 Console: `http://localhost:8080/h2-console`
+- JDBC URL: `jdbc:h2:file:./data/hotel_puerto`
+- Usuario: `sa`
+- Password: *(vacío)*
+
+📌 La base de datos H2 se guarda en local en la carpeta `./data/`  
 
 ---
 
-## 9. Tests y cobertura (JaCoCo)
+### SOAP (Apache CXF)
+
+Configuración:
+
+- `cxf.path=/services`
+
+Endpoints (ejemplo Guest):
+
+- Endpoint: `http://localhost:8080/services/guest`
+- WSDL: `http://localhost:8080/services/guest?wsdl`
+
+---
+
+## 🧪 Tests y cobertura
 
 Ejecutar tests:
 
-```bash
-mvn test
-```
+    mvn clean test
 
-Informe de cobertura JaCoCo (Maven):
+Informe de cobertura JaCoCo:
 
 - `target/site/jacoco/index.html`
 
 ---
 
-## 10. Librerías incluidas (pom.xml)
+## Base de datos SQLite de referencia
 
-- Spring Web (REST)
-- Spring Data JPA + H2
-- Spring Data MongoDB
-- Apache CXF (SOAP/JAX-WS)
-- MapStruct (mappers)
-- springdoc-openapi (Swagger UI)
-- JUnit 5 / Mockito (tests)
-- JaCoCo (cobertura)
+El enunciado incluye una base SQLite `hotel_puerto.db` como **referencia** del modelo de datos.
 
-Referencias:
-
-- MapStruct: https://mapstruct.org/
-- JaCoCo: https://www.jacoco.org/jacoco/
-- Springdoc OpenAPI: https://springdoc.org/
-- Apache CXF: https://cxf.apache.org/
+⚠️ Esta base **NO se usa directamente** en la app (la app usa H2 + Mongo).
 
 ---
 
-## Licencia 📄
+## Tecnologías
 
-Apache 2.0
+- Spring Boot 3
+- Spring Web (REST)
+- Spring Data JPA + H2
+- Spring Data MongoDB
+- MapStruct
+- Apache CXF (SOAP / JAX-WS)
+- Swagger / OpenAPI (springdoc)
+- JUnit 5 + Mockito
+- JaCoCo
 
-</div>
+---
+
+## Licencia
+
+Proyecto académico / educativo.
