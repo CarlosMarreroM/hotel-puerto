@@ -85,7 +85,7 @@ La aplicación se inicia en:
 - Usuario: `sa`
 - Password: *(vacío)*
 
-📌 La base de datos H2 se guarda en local en la carpeta `./data/`  
+La base de datos H2 se guarda en local en la carpeta `./data/`  
 
 ---
 
@@ -102,7 +102,7 @@ Endpoints (ejemplo Guest):
 
 ---
 
-## 🧪 Tests y cobertura
+## Tests y cobertura
 
 Ejecutar tests:
 
