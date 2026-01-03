@@ -114,6 +114,26 @@ Informe de cobertura JaCoCo:
 
 ---
 
+## Manejo de errores (REST)
+
+La API REST utiliza un `@RestControllerAdvice` (`GlobalExceptionHandler`) para devolver respuestas de error consistentes en formato JSON.
+
+- `400 Bad Request` → datos inválidos (`IllegalArgumentException`, `NullPointerException` desde validaciones)
+- `409 Conflict` → conflicto de estado (por ejemplo, intentar crear un recurso con un id ya existente)
+
+Formato de error devuelto:
+
+```json
+{
+  "timestamp": "2026-01-03T21:39:25.686052Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "hotel name must not be blank",
+  "path": "/api/hotels"
+}
+```
+---
+
 ## Base de datos SQLite de referencia
 
 El enunciado incluye una base SQLite `hotel_puerto.db` como **referencia** del modelo de datos.
@@ -133,6 +153,17 @@ El enunciado incluye una base SQLite `hotel_puerto.db` como **referencia** del m
 - Swagger / OpenAPI (springdoc)
 - JUnit 5 + Mockito
 - JaCoCo
+
+---
+
+## Mejoras futuras
+
+Este proyecto prioriza la claridad arquitectónica y el aprendizaje.  
+Algunas mejoras previstas para una evolución futura son:
+
+- **Añadir endpoint `PATCH`** para permitir actualizaciones parciales de recursos, manteniendo `PUT` como actualización completa.
+- **Estandarizar respuestas `404 Not Found`** mediante una excepción dedicada (`NotFoundException`) y su mapeo en `@RestControllerAdvice`, evitando comprobaciones explícitas en los controllers.
+- **Unificar la estrategia de validación** del componente `Guard`, evitando el uso de `NullPointerException` como validación de entrada y utilizando únicamente excepciones semánticas (`IllegalArgumentException`, etc.).
 
 ---
 
