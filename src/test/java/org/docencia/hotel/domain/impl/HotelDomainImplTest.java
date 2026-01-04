@@ -282,25 +282,18 @@ class HotelDomainImplTest {
         verify(hotelService).existsById("h404");
         verifyNoMoreInteractions(hotelService);
 
-        // importante: si no existe el hotel, ni mira bookings ni borra rooms
         verifyNoInteractions(roomService, bookingService);
     }
 
     @Test
-    void deleteHotel_whenHasBookings_throwsIllegalArgumentException_andDoesNotDeleteRoomsOrHotel() {
+    void deleteHotel_whenHotelHasBookings_throwsIllegalStateException_andDoesNotDelete() {
         when(hotelService.existsById("h1")).thenReturn(true);
         when(bookingService.existsByHotelId("h1")).thenReturn(true);
-
-        IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> domain.deleteHotel("h1"));
-        assertEquals("cannot delete hotel h1 because it has bookings in its rooms", ex.getMessage());
-
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, () -> domain.deleteHotel("h1"));
+        assertEquals("cannot delete hotel h1 because it has bookings in its rooms", ex.getMessage());   
         verify(hotelService).existsById("h1");
         verify(bookingService).existsByHotelId("h1");
-
-        verify(roomService, never()).deleteByHotelId(any());
-        verify(hotelService, never()).deleteById(any());
-
         verifyNoMoreInteractions(hotelService, bookingService);
         verifyNoInteractions(roomService);
     }

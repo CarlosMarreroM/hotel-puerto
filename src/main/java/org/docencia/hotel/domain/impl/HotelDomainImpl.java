@@ -97,7 +97,7 @@ public class HotelDomainImpl implements HotelDomain {
         }
 
         if (bookingService.existsByHotelId(id)) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "cannot delete hotel " + id + " because it has bookings in its rooms");
         }
 
