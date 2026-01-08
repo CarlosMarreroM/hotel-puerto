@@ -164,6 +164,7 @@ Algunas mejoras previstas para una evolución futura son:
 - **Añadir endpoint `PATCH`** para permitir actualizaciones parciales de recursos, manteniendo `PUT` como actualización completa.
 - **Estandarizar respuestas `404 Not Found`** mediante una excepción dedicada (`NotFoundException`) y su mapeo en `@RestControllerAdvice`, evitando comprobaciones explícitas en los controllers.
 - **Unificar la estrategia de validación** del componente `Guard`, evitando el uso de `NullPointerException` como validación de entrada y utilizando únicamente excepciones semánticas (`IllegalArgumentException`, etc.).
+- Añadir soporte para filtrado de habitaciones por tipo sin necesidad de indicar hotel (`GET /rooms?type=...`).
 
 ---
 
