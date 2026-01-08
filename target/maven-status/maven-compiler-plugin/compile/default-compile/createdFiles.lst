@@ -1,4 +1,5 @@
 org/docencia/hotel/mapper/jpa/GuestMapperImpl.class
+org/docencia/hotel/web/rest/GlobalExceptionHandler$ApiError.class
 org/docencia/hotel/config/CxfConfig.class
 org/docencia/hotel/web/soap/GuestSoapService.class
 org/docencia/hotel/mapper/nosql/GuestPreferencesMapperImpl.class
@@ -7,6 +8,7 @@ org/docencia/hotel/persistence/jpa/entity/GuestEntity.class
 org/docencia/hotel/mapper/jpa/BookingMapperImpl.class
 org/docencia/hotel/web/rest/GuestController.class
 org/docencia/hotel/service/impl/BookingServiceImpl.class
+org/docencia/hotel/web/rest/GlobalExceptionHandler.class
 org/docencia/hotel/persistence/repository/nosql/GuestPreferencesRepository.class
 org/docencia/hotel/mapper/nosql/GuestPreferencesMapper.class
 org/docencia/hotel/domain/model/GuestPreferences.class
@@ -15,6 +17,7 @@ org/docencia/hotel/mapper/jpa/HotelMapper.class
 org/docencia/hotel/mapper/jpa/HotelMapperImpl.class
 org/docencia/hotel/service/api/HotelService.class
 org/docencia/hotel/domain/impl/RoomDomainImpl.class
+org/docencia/hotel/web/rest/RoomController.class
 org/docencia/hotel/persistence/jpa/entity/HotelEntity.class
 org/docencia/hotel/mapper/jpa/RoomMapperImpl.class
 org/docencia/hotel/validation/Guard.class
@@ -40,6 +43,7 @@ org/docencia/hotel/persistence/repository/jpa/RoomRepository.class
 org/docencia/hotel/service/api/BookingService.class
 org/docencia/hotel/domain/impl/GuestDomainImpl.class
 org/docencia/hotel/service/api/RoomService.class
+org/docencia/hotel/web/rest/BookingController.class
 org/docencia/hotel/persistence/nosql/document/GuestPreferencesDocument.class
 org/docencia/hotel/persistence/repository/jpa/HotelRepository.class
 org/docencia/hotel/domain/model/Room.class

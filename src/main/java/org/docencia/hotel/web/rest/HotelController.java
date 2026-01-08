@@ -4,10 +4,12 @@ import java.net.URI;
 import java.util.List;
 
 import org.docencia.hotel.domain.api.HotelDomain;
+import org.docencia.hotel.domain.api.RoomDomain;
 import org.docencia.hotel.domain.model.Hotel;
-import org.springframework.http.HttpStatus;
+import org.docencia.hotel.domain.model.Room;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,59 +23,107 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class HotelController {
 
     private final HotelDomain hotelDomain;
+    private final RoomDomain roomDomain;
 
-    public HotelController(HotelDomain hotelDomain) {
+    public HotelController(HotelDomain hotelDomain, RoomDomain roomDomain) {
         this.hotelDomain = hotelDomain;
+        this.roomDomain = roomDomain;
     }
 
-    @Operation(
-        summary = "Crear un hotel",
-        description = "Crea un hotel nuevo. En esta implementación, el id debe venir informado en el body. "
-                    + "Si el id ya existe, devuelve 409 Conflict."
-    )
+    @Operation(summary = "Crear un hotel", description = "Crea un hotel nuevo. El id del hotel debe ser único.")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Hotel creado correctamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos (id/nombre vacíos, etc.)"),
-        @ApiResponse(responseCode = "409", description = "Ya existe un hotel con ese id")
+            @ApiResponse(responseCode = "201", description = "Hotel creado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos (id/nombre vacíos, etc.)"),
+            @ApiResponse(responseCode = "409", description = "Ya existe un hotel con ese id")
     })
     @PostMapping
     public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel) {
-        // La validación fuerte y la regla de "si existe -> error" deben estar en Dominio.
-        // Aquí solo llamamos al Dominio y construimos la respuesta HTTP.
-        Hotel created = hotelDomain.createHotel(hotel);
+        Hotel createdHotel = hotelDomain.createHotel(hotel);
 
-        // 201 Created + Location
-        URI location = URI.create("/api/hotels/" + created.getId());
-        return ResponseEntity.created(location).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdHotel.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(createdHotel);
     }
 
-    // -------------------------------------------------------------------------
-    // READ (LIST + FILTER)
-    // -------------------------------------------------------------------------
-
-    @Operation(
-        summary = "Listar hoteles",
-        description = "Devuelve todos los hoteles. Si se pasa el parámetro 'name', filtra por nombre exacto."
-    )
+    @Operation(summary = "Listar hoteles", description = "Devuelve todos los hoteles. Si se pasa el parámetro 'name', filtra por nombre exacto.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista de hoteles devuelta correctamente"),
-        @ApiResponse(responseCode = "400", description = "Parámetro de búsqueda inválido")
+            @ApiResponse(responseCode = "200", description = "Lista de hoteles devuelta correctamente"),
+            @ApiResponse(responseCode = "400", description = "Parámetro de búsqueda inválido")
     })
     @GetMapping
     public ResponseEntity<List<Hotel>> getHotels(
-            @Parameter(description = "Nombre del hotel para filtrar (opcional)")
-            @RequestParam(required = false) String name
-    ) {
-        // Si viene name, delegamos en el caso de uso de búsqueda por nombre
+            @Parameter(description = "Nombre del hotel para filtrar (opcional)") @RequestParam(required = false) String name) {
+
         if (name != null) {
-            
             return ResponseEntity.ok(hotelDomain.getHotelsByName(name));
         }
 
-        // Si no viene name, listamos todos
         return ResponseEntity.ok(hotelDomain.getAllHotels());
     }
-    
 
+    @Operation(summary = "Listar hoteles por id", description = "Devuelve el hotel que coincide con el id proporcionado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista de hoteles devuelta correctamente"),
+            @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+            @ApiResponse(responseCode = "400", description = "Id inválido")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Hotel> getHotelById(
+            @Parameter(description = "Identificador del hotel") @PathVariable String id) {
+        return hotelDomain.getHotelById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+
+    }
+
+    @Operation(summary = "Actualizar un hotel", description = "Actualiza los datos de un hotel existente.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Hotel actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Hotel no encontrado")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<Hotel> updateHotel(
+            @PathVariable String id,
+            @RequestBody Hotel hotel) {
+
+        if (hotelDomain.getHotelById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Hotel updated = hotelDomain.updateHotel(id, hotel);
+        return ResponseEntity.ok(updated);
+    }
+
+    @Operation(summary = "Eliminar un hotel", description = "Elimina un hotel por su id.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Hotel eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+            @ApiResponse(responseCode = "409", description = "No se puede eliminar el hotel por reglas de negocio")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteHotel(@PathVariable String id) {
+
+        if (hotelDomain.getHotelById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        hotelDomain.deleteHotel(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/rooms")
+    public ResponseEntity<List<Room>> getRoomsByHotel(@PathVariable String id) {
+
+        if (hotelDomain.getHotelById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(roomDomain.getRoomsByHotel(id));
+    }
 
 }

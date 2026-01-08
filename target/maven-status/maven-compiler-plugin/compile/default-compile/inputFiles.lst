@@ -37,7 +37,10 @@
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/service/impl/HotelServiceImpl.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/service/impl/RoomServiceImpl.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/validation/Guard.java
+/Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/rest/BookingController.java
+/Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/rest/GlobalExceptionHandler.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/rest/GuestController.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/rest/HotelController.java
+/Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/rest/RoomController.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/soap/GuestSoapService.java
 /Users/carlos/DAM/AED/hotel-puerto/src/main/java/org/docencia/hotel/web/soap/GuestSoapServiceImpl.java
