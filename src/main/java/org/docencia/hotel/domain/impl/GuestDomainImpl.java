@@ -44,10 +44,8 @@ public class GuestDomainImpl implements GuestDomain {
             throw new IllegalStateException("guest already exists: " + guest.getId());
         }
 
-        GuestPreferences preferences = guest.getPreferences();
-
-        if (preferences != null) {
-            preferences.setGuestId(guest.getId());
+        if (guest.getPreferences() != null) {
+            guest.getPreferences().setGuestId(guest.getId());
         }
 
         return guestService.save(guest);
@@ -100,7 +98,7 @@ public class GuestDomainImpl implements GuestDomain {
     }
 
     @Override
-    public GuestPreferences UpdatePreferences(String guestId, GuestPreferences preferences) {
+    public GuestPreferences updatePreferences(String guestId, GuestPreferences preferences) {
         Guard.requireNonBlank(guestId, "guest id");
         Guard.requireNonNull(preferences, "preferences");
 
@@ -125,19 +123,4 @@ public class GuestDomainImpl implements GuestDomain {
         return guestService.deletePreferencesByGuestId(guestId);
     }
 
-    @Override
-    public Optional<Guest> getGuestByIdWithPreferences(String id) {
-        Guard.requireNonBlank(id, "guest id");
-
-        Optional<Guest> guestOpt = guestService.findGuestById(id);
-        if (guestOpt.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Guest guest = guestOpt.get();
-        GuestPreferences prefs = guestService.findPreferencesByGuestId(id).orElse(null);
-        guest.setPreferences(prefs);
-
-        return Optional.of(guest);
-    }
 }

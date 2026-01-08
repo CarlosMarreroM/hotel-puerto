@@ -11,6 +11,8 @@ import org.docencia.hotel.service.api.RoomService;
 import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class RoomDomainImpl implements RoomDomain {
 
@@ -123,13 +125,14 @@ public class RoomDomainImpl implements RoomDomain {
         }
 
         if (bookingService.existsByRoomId(id)) {
-            throw new IllegalArgumentException("cannot delete room " + id + " because it has bookings");
+            throw new IllegalStateException("cannot delete room " + id + " because it has bookings");
         }
 
         return roomService.deleteById(id);
     }
 
     @Override
+    @Transactional
     public int deleteRoomsByHotel(String hotelId) {
         Guard.requireNonBlank(hotelId, "hotel id");
 
@@ -138,7 +141,7 @@ public class RoomDomainImpl implements RoomDomain {
         }
 
         if (bookingService.existsByHotelId(hotelId)) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "cannot delete rooms for hotel " + hotelId + " because there are bookings");
         }
 

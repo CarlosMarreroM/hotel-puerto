@@ -45,7 +45,7 @@ public class BookingDomainImpl implements BookingDomain {
         validateDates(booking.getCheckIn(), booking.getCheckOut());
 
         if (bookingService.existsById(booking.getId())) {
-            throw new IllegalArgumentException("booking already exists: " + booking.getId());
+            throw new IllegalStateException("booking already exists: " + booking.getId());
         }
 
         return bookingService.save(booking);

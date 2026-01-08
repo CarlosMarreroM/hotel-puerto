@@ -1,6 +1,7 @@
 package org.docencia.hotel.domain.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -225,14 +226,14 @@ class BookingDomainImplTest {
     }
 
     @Test
-    void createBooking_whenAlreadyExists_throwsIllegalArgumentException_andDoesNotSave() {
+    void createBooking_whenAlreadyExists_throwsIllegalStateException_andDoesNotSave() {
         Booking b = booking("b1", "r1", "g1", "2025-01-01", "2025-01-02");
 
         stubsAllExistForCreateOrUpdate(b);
         when(bookingService.existsById("b1")).thenReturn(true);
 
-        IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> domain.createBooking(b));
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, () -> domain.createBooking(b));
         assertEquals("booking already exists: b1", ex.getMessage());
 
         verify(guestService).existsById("g1");

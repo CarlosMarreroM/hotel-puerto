@@ -64,7 +64,7 @@ public interface GuestDomain {
      * @param preferences Preferencias a guardar o actualizar.
      * @return Preferencias guardadas o actualizadas.
      */
-    GuestPreferences UpdatePreferences(String guestId, GuestPreferences preferences);
+    GuestPreferences updatePreferences(String guestId, GuestPreferences preferences);
 
     /**
      * Obtiene las preferencias de un huesped por su identificador.
@@ -82,11 +82,4 @@ public interface GuestDomain {
      */
     boolean deletePreferencesByGuestId(String guestId);
 
-    /**
-     * Obtiene un huesped por su identificador, incluyendo sus preferencias.
-     * 
-     * @param id Identificador del huesped.
-     * @return Huesped encontrado con sus preferencias, o vacio si no existe.
-     */
-    Optional<Guest> getGuestByIdWithPreferences(String id);
 }

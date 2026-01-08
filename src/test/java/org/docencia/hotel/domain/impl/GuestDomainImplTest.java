@@ -115,13 +115,12 @@ class GuestDomainImplTest {
     }
 
     @Test
-    void createGuest_whenPreferencesPresent_setsGuestIdInPreferences_thenChecksExists_thenDelegatesToSave() {
+    void createGuest_whenPreferencesPresent_setsGuestIdInPreferences_thenDelegatesToSave() {
         Guest input = guest("g1", "Ana");
         GuestPreferences gp = prefs("willBeOverwritten");
         input.setPreferences(gp);
 
         Guest saved = guest("g1", "Ana");
-
         when(guestService.existsById("g1")).thenReturn(false);
         when(guestService.save(input)).thenReturn(saved);
 
@@ -343,7 +342,7 @@ class GuestDomainImplTest {
     void updatePreferences_whenGuestIdNull_throwsNullPointerException() {
         GuestPreferences p = prefs("x");
 
-        assertThrows(NullPointerException.class, () -> domain.UpdatePreferences(null, p));
+        assertThrows(NullPointerException.class, () -> domain.updatePreferences(null, p));
         verifyNoInteractions(guestService, bookingService);
     }
 
@@ -351,13 +350,13 @@ class GuestDomainImplTest {
     void updatePreferences_whenGuestIdBlank_throwsIllegalArgumentException() {
         GuestPreferences p = prefs("x");
 
-        assertThrows(IllegalArgumentException.class, () -> domain.UpdatePreferences("  ", p));
+        assertThrows(IllegalArgumentException.class, () -> domain.updatePreferences("  ", p));
         verifyNoInteractions(guestService, bookingService);
     }
 
     @Test
     void updatePreferences_whenPreferencesNull_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> domain.UpdatePreferences("g1", null));
+        assertThrows(NullPointerException.class, () -> domain.updatePreferences("g1", null));
         verifyNoInteractions(guestService, bookingService);
     }
 
@@ -367,7 +366,7 @@ class GuestDomainImplTest {
         when(guestService.existsById("g404")).thenReturn(false);
 
         IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> domain.UpdatePreferences("g404", p));
+                assertThrows(IllegalArgumentException.class, () -> domain.updatePreferences("g404", p));
         assertEquals("guest not found: g404", ex.getMessage());
 
         verify(guestService).existsById("g404");
@@ -383,7 +382,7 @@ class GuestDomainImplTest {
         when(guestService.existsById("g1")).thenReturn(true);
         when(guestService.savedPreferences(p)).thenReturn(expected);
 
-        GuestPreferences result = domain.UpdatePreferences("g1", p);
+        GuestPreferences result = domain.updatePreferences("g1", p);
 
         assertEquals("g1", p.getGuestId(), "Debe forzar guestId antes de actualizar");
         assertSame(expected, result);
@@ -446,72 +445,6 @@ class GuestDomainImplTest {
         assertTrue(result);
 
         verify(guestService).deletePreferencesByGuestId("g1");
-        verifyNoMoreInteractions(guestService);
-        verifyNoInteractions(bookingService);
-    }
-
-    // ===================== getGuestByIdWithPreferences =====================
-
-    @Test
-    void getGuestByIdWithPreferences_whenIdNull_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> domain.getGuestByIdWithPreferences(null));
-        verifyNoInteractions(guestService, bookingService);
-    }
-
-    @Test
-    void getGuestByIdWithPreferences_whenIdBlank_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> domain.getGuestByIdWithPreferences("  "));
-        verifyNoInteractions(guestService, bookingService);
-    }
-
-    @Test
-    void getGuestByIdWithPreferences_whenGuestNotFound_returnsEmpty_andDoesNotLoadPreferences() {
-        when(guestService.findGuestById("g404")).thenReturn(Optional.empty());
-
-        Optional<Guest> result = domain.getGuestByIdWithPreferences("g404");
-
-        assertTrue(result.isEmpty());
-
-        verify(guestService).findGuestById("g404");
-        verifyNoMoreInteractions(guestService);
-        verifyNoInteractions(bookingService);
-    }
-
-    @Test
-    void getGuestByIdWithPreferences_whenGuestFound_andNoPreferences_setsNullPreferences() {
-        Guest g = guest("g1", "Ana");
-
-        when(guestService.findGuestById("g1")).thenReturn(Optional.of(g));
-        when(guestService.findPreferencesByGuestId("g1")).thenReturn(Optional.empty());
-
-        Optional<Guest> result = domain.getGuestByIdWithPreferences("g1");
-
-        assertTrue(result.isPresent());
-        assertSame(g, result.get());
-        assertNull(g.getPreferences(), "Si no hay preferencias, debe dejar preferences a null");
-
-        verify(guestService).findGuestById("g1");
-        verify(guestService).findPreferencesByGuestId("g1");
-        verifyNoMoreInteractions(guestService);
-        verifyNoInteractions(bookingService);
-    }
-
-    @Test
-    void getGuestByIdWithPreferences_whenGuestFound_andPreferencesFound_setsPreferences() {
-        Guest g = guest("g1", "Ana");
-        GuestPreferences p = prefs("g1");
-
-        when(guestService.findGuestById("g1")).thenReturn(Optional.of(g));
-        when(guestService.findPreferencesByGuestId("g1")).thenReturn(Optional.of(p));
-
-        Optional<Guest> result = domain.getGuestByIdWithPreferences("g1");
-
-        assertTrue(result.isPresent());
-        assertSame(g, result.get());
-        assertSame(p, g.getPreferences());
-
-        verify(guestService).findGuestById("g1");
-        verify(guestService).findPreferencesByGuestId("g1");
         verifyNoMoreInteractions(guestService);
         verifyNoInteractions(bookingService);
     }

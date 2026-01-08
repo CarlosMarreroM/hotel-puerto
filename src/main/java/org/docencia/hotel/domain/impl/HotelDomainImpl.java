@@ -11,6 +11,8 @@ import org.docencia.hotel.service.api.RoomService;
 import org.docencia.hotel.validation.Guard;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class HotelDomainImpl implements HotelDomain {
 
@@ -89,6 +91,7 @@ public class HotelDomainImpl implements HotelDomain {
     }
 
     @Override
+    @Transactional
     public boolean deleteHotel(String id) {
         Guard.requireNonBlank(id, "hotel id");
 

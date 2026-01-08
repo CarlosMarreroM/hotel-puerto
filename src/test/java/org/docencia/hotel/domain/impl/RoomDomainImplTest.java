@@ -1,6 +1,7 @@
 package org.docencia.hotel.domain.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -472,13 +473,13 @@ class RoomDomainImplTest {
         }
 
         @Test
-        @DisplayName("deleteRoom: si hay bookings -> IllegalArgumentException y no borra")
+        @DisplayName("deleteRoom: si hay bookings -> IllegalStateException y no borra")
         void deleteRoom_whenHasBookings_throwsAndDoesNotDelete() {
             when(roomService.existsById("r1")).thenReturn(true);
             when(bookingService.existsByRoomId("r1")).thenReturn(true);
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () -> domain.deleteRoom("r1"));
+            IllegalStateException ex =
+                    assertThrows(IllegalStateException.class, () -> domain.deleteRoom("r1"));
             assertEquals("cannot delete room r1 because it has bookings", ex.getMessage());
 
             verify(roomService).existsById("r1");
@@ -542,13 +543,13 @@ class RoomDomainImplTest {
         }
 
         @Test
-        @DisplayName("deleteRoomsByHotel: si hay bookings en el hotel -> IllegalArgumentException y no borra rooms")
+        @DisplayName("deleteRoomsByHotel: si hay bookings en el hotel -> IllegalStateException y no borra rooms")
         void deleteRoomsByHotel_whenHasBookings_throwsAndDoesNotDelete() {
             when(hotelService.existsById("h1")).thenReturn(true);
             when(bookingService.existsByHotelId("h1")).thenReturn(true);
 
-            IllegalArgumentException ex =
-                    assertThrows(IllegalArgumentException.class, () -> domain.deleteRoomsByHotel("h1"));
+            IllegalStateException ex =
+                    assertThrows(IllegalStateException.class, () -> domain.deleteRoomsByHotel("h1"));
             assertEquals("cannot delete rooms for hotel h1 because there are bookings", ex.getMessage());
 
             verify(hotelService).existsById("h1");
