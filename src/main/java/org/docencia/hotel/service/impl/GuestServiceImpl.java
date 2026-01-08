@@ -1,7 +1,10 @@
 package org.docencia.hotel.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.docencia.hotel.domain.model.Guest;
 import org.docencia.hotel.domain.model.GuestPreferences;
@@ -63,21 +66,27 @@ public class GuestServiceImpl implements GuestService {
         this.guestPreferencesMapper = guestPreferencesMapper;
     }
 
+
     @Override
     public Guest save(Guest guest) {
-        Guard.requireNonNull(guest, "Guest");
+        Guard.requireNonNull(guest, "guest");
 
-        GuestEntity guestEntity = guestMapper.toEntity(guest);
-        GuestEntity savedEntity = guestJpaRepository.save(guestEntity);
+        GuestEntity entity = guestMapper.toEntity(guest);
+        GuestEntity savedEntity = guestJpaRepository.save(entity);
         Guest savedGuest = guestMapper.toDomain(savedEntity);
 
-        GuestPreferences preferences = guest.getPreferences();
+        GuestPreferences prefs = guest.getPreferences();
 
-        if (preferences != null) {
-            GuestPreferencesDocument document = guestPreferencesMapper.toDocument(preferences);
-            document.setGuestId(savedGuest.getId());
-            GuestPreferencesDocument saveDocument = guestPreferencesRepository.save(document);
-            savedGuest.setPreferences(guestPreferencesMapper.toDomain(saveDocument));
+        if (prefs != null) {
+            prefs.setGuestId(savedGuest.getId());
+
+            GuestPreferencesDocument doc = guestPreferencesMapper.toDocument(prefs);
+            doc.setGuestId(savedGuest.getId());
+
+            GuestPreferencesDocument savedDoc = guestPreferencesRepository.save(doc);
+            savedGuest.setPreferences(guestPreferencesMapper.toDomain(savedDoc));
+        } else {
+            savedGuest.setPreferences(null);
         }
 
         return savedGuest;
@@ -85,19 +94,18 @@ public class GuestServiceImpl implements GuestService {
 
     @Override
     public GuestPreferences savedPreferences(GuestPreferences preferences) {
-        Guard.requireNonNull(preferences, "GuestPreferences");
-        Guard.requireNonBlank(preferences.getGuestId(), "GuestPreferences guest id");
+        Guard.requireNonNull(preferences, "preferences");
+        Guard.requireNonBlank(preferences.getGuestId(), "guest id in preferences");
 
-        GuestPreferencesDocument document = guestPreferencesMapper.toDocument(preferences);
-        GuestPreferencesDocument savedDocument = guestPreferencesRepository.save(document);
+        GuestPreferencesDocument doc = guestPreferencesMapper.toDocument(preferences);
+        GuestPreferencesDocument savedDoc = guestPreferencesRepository.save(doc);
 
-        return guestPreferencesMapper.toDomain(savedDocument);
+        return guestPreferencesMapper.toDomain(savedDoc);
     }
 
     @Override
     public boolean existsById(String id) {
         Guard.requireNonBlank(id, "guest id");
-
         return guestJpaRepository.existsById(id);
     }
 
@@ -105,16 +113,46 @@ public class GuestServiceImpl implements GuestService {
     public Optional<Guest> findGuestById(String id) {
         Guard.requireNonBlank(id, "guest id");
 
-        return guestJpaRepository.findById(id)
-                .map(guestMapper::toDomain);
+        Optional<Guest> guestOpt = guestJpaRepository.findById(id).map(guestMapper::toDomain);
+        
+        if (guestOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Guest guest = guestOpt.get();
+
+        GuestPreferences prefs = guestPreferencesRepository.findById(id)
+                .map(guestPreferencesMapper::toDomain)
+                .orElse(null);
+
+        guest.setPreferences(prefs);
+        return Optional.of(guest);
     }
 
     @Override
     public List<Guest> findAllGuests() {
-        return guestJpaRepository.findAll()
+        List<Guest> guests = guestJpaRepository.findAll()
                 .stream()
                 .map(guestMapper::toDomain)
                 .toList();
+
+        if (guests.isEmpty()) {
+            return guests;
+        }
+
+        List<String> ids = guests.stream().map(Guest::getId).toList();
+
+        Map<String, GuestPreferences> prefsById = guestPreferencesRepository.findAllById(ids)
+                .stream()
+                .map(guestPreferencesMapper::toDomain)
+                .collect(Collectors.toMap(
+                        GuestPreferences::getGuestId,
+                        Function.identity(),
+                        (a, b) -> a
+                ));
+
+        guests.forEach(g -> g.setPreferences(prefsById.get(g.getId())));
+        return guests;
     }
 
     @Override
@@ -126,26 +164,27 @@ public class GuestServiceImpl implements GuestService {
     }
 
     @Override
-    public boolean deleteGuestById(String id) {
-        Guard.requireNonBlank(id, "guest id");
+    public boolean deletePreferencesByGuestId(String guestId) {
+        Guard.requireNonBlank(guestId, "guest id");
 
-        if (!guestJpaRepository.existsById(id))
+        if (!guestPreferencesRepository.existsById(guestId)) {
             return false;
+        }
 
-        guestJpaRepository.deleteById(id);
-
+        guestPreferencesRepository.deleteById(guestId);
         return true;
     }
 
     @Override
-    public boolean deletePreferencesByGuestId(String guestId) {
-        Guard.requireNonBlank(guestId, "guest id");
+    public boolean deleteGuestById(String id) {
+        Guard.requireNonBlank(id, "guest id");
 
-        if (!guestPreferencesRepository.existsById(guestId))
+        if (!guestJpaRepository.existsById(id)) {
             return false;
+        }
 
-        guestPreferencesRepository.deleteById(guestId);
-
+        guestJpaRepository.deleteById(id);
         return true;
     }
+
 }
