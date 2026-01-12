@@ -4,9 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.docencia.hotel.domain.api.HotelDomain;
-import org.docencia.hotel.domain.api.RoomDomain;
 import org.docencia.hotel.domain.model.Hotel;
-import org.docencia.hotel.domain.model.Room;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -23,11 +21,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class HotelController {
 
     private final HotelDomain hotelDomain;
-    private final RoomDomain roomDomain;
 
-    public HotelController(HotelDomain hotelDomain, RoomDomain roomDomain) {
+    public HotelController(HotelDomain hotelDomain) {
         this.hotelDomain = hotelDomain;
-        this.roomDomain = roomDomain;
     }
 
     @Operation(summary = "Crear un hotel", description = "Crea un hotel nuevo. El id del hotel debe ser único.")
@@ -115,15 +111,4 @@ public class HotelController {
         hotelDomain.deleteHotel(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/{id}/rooms")
-    public ResponseEntity<List<Room>> getRoomsByHotel(@PathVariable String id) {
-
-        if (hotelDomain.getHotelById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(roomDomain.getRoomsByHotel(id));
-    }
-
 }

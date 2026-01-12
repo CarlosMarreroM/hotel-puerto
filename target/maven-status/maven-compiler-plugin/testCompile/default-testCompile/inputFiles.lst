@@ -17,3 +17,7 @@
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/service/impl/GuestServiceImplTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/service/impl/HotelServiceImplTest.java
 /Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/service/impl/RoomServiceImplTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/web/rest/BookingControllerTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/web/rest/GuestControllerTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/web/rest/HotelControllerTest.java
+/Users/carlos/DAM/AED/hotel-puerto/src/test/java/org/docencia/hotel/web/rest/RoomControllerTest.java
