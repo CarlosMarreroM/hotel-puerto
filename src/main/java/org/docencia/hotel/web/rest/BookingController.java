@@ -109,7 +109,6 @@ public class BookingController {
             @PathVariable String id,
             @RequestBody Booking booking) {
 
-        // Igual que en tus otros controllers: devolvemos 404 si no existe
         if (bookingDomain.getBookingById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
